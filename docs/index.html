@@ -1,0 +1,1721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>100Prints Browser SDK — Documentation</title>
+  <meta name="description" content="Complete documentation for the 100Prints Browser SDK. Render templates, generate PDFs, export PNGs, and bulk-generate documents from any JavaScript application." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── Reset & Base ────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #09090b;
+      --surface:     #111113;
+      --surface2:    #18181b;
+      --border:      rgba(255,255,255,0.07);
+      --border-hi:   rgba(255,255,255,0.12);
+      --text:        #fafafa;
+      --text-muted:  #71717a;
+      --text-dim:    #52525b;
+      --accent:      #a78bfa;
+      --accent-glow: rgba(167,139,250,0.15);
+      --accent-dim:  rgba(167,139,250,0.08);
+      --green:       #4ade80;
+      --blue:        #60a5fa;
+      --orange:      #fb923c;
+      --pink:        #f472b6;
+      --yellow:      #facc15;
+      --red:         #f87171;
+      --radius:      8px;
+      --radius-lg:   12px;
+      --sidebar-w:   260px;
+      --header-h:    60px;
+      --font:        'Geist', system-ui, sans-serif;
+      --mono:        'Geist Mono', 'Fira Code', monospace;
+    }
+
+    html { scroll-behavior: smooth; font-size: 15px; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+    /* ─── Scrollbar ───────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 4px; }
+
+    /* ─── Top Header ──────────────────────────────────────────────────── */
+    #top-header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--header-h);
+      background: rgba(9,9,11,0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 100;
+    }
+
+    .header-left { display: flex; align-items: center; gap: 16px; }
+
+    .logo {
+      display: flex; align-items: center; gap: 8px;
+      font-weight: 600; font-size: 0.9rem; letter-spacing: -0.01em;
+      color: var(--text);
+    }
+
+    .logo-mark {
+      width: 26px; height: 26px;
+      background: linear-gradient(135deg, #a78bfa, #7c3aed);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; font-weight: 700; color: white;
+      letter-spacing: -0.02em;
+    }
+
+    .header-divider {
+      width: 1px; height: 18px;
+      background: var(--border-hi);
+    }
+
+    .header-tag {
+      font-size: 0.72rem;
+      font-family: var(--mono);
+      color: var(--text-muted);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 2px 8px;
+    }
+
+    .header-right { display: flex; align-items: center; gap: 12px; }
+
+    .header-badge {
+      font-size: 0.72rem;
+      font-family: var(--mono);
+      color: var(--green);
+      background: rgba(74,222,128,0.08);
+      border: 1px solid rgba(74,222,128,0.2);
+      border-radius: 20px;
+      padding: 3px 10px;
+      letter-spacing: 0.02em;
+    }
+
+    .header-link {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 10px;
+      border-radius: var(--radius);
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .header-link:hover { background: var(--surface2); color: var(--text); text-decoration: none; }
+
+    /* ─── Layout ──────────────────────────────────────────────────────── */
+    #layout {
+      display: flex;
+      padding-top: var(--header-h);
+      min-height: 100vh;
+    }
+
+    /* ─── Sidebar ─────────────────────────────────────────────────────── */
+    #sidebar {
+      position: fixed;
+      top: var(--header-h);
+      left: 0;
+      width: var(--sidebar-w);
+      height: calc(100vh - var(--header-h));
+      overflow-y: auto;
+      border-right: 1px solid var(--border);
+      padding: 28px 0 40px;
+      background: var(--bg);
+    }
+
+    .sidebar-section { margin-bottom: 4px; }
+
+    .sidebar-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      padding: 10px 20px 6px;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 20px;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      border-left: 2px solid transparent;
+      transition: all 0.12s;
+    }
+
+    .sidebar-link:hover {
+      color: var(--text);
+      background: var(--surface2);
+      text-decoration: none;
+    }
+
+    .sidebar-link.active {
+      color: var(--accent);
+      border-left-color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .sidebar-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--border-hi);
+      flex-shrink: 0;
+    }
+
+    .sidebar-link.active .sidebar-dot { background: var(--accent); }
+
+    /* ─── Main Content ────────────────────────────────────────────────── */
+    #content {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      max-width: 900px;
+      padding: 60px 64px 120px;
+    }
+
+    /* ─── Section Containers ──────────────────────────────────────────── */
+    .doc-section {
+      margin-bottom: 80px;
+      scroll-margin-top: calc(var(--header-h) + 20px);
+    }
+
+    /* ─── Typography System ───────────────────────────────────────────── */
+    .hero-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .hero-title {
+      font-size: 2.6rem;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #fff 0%, #a1a1aa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: 1rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+      max-width: 560px;
+      margin-bottom: 32px;
+    }
+
+    h2 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      color: var(--text);
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+    }
+
+    h2 .anchor { color: var(--text-dim); font-size: 0.85em; opacity: 0; transition: opacity 0.15s; }
+    h2:hover .anchor { opacity: 1; }
+
+    h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: -0.015em;
+      color: var(--text);
+      margin: 28px 0 10px;
+    }
+
+    p {
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      line-height: 1.72;
+      font-size: 0.9rem;
+    }
+
+    /* ─── Inline Code ─────────────────────────────────────────────────── */
+    code:not([class]) {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--accent);
+      background: var(--accent-dim);
+      border: 1px solid rgba(167,139,250,0.15);
+      border-radius: 4px;
+      padding: 1px 6px;
+    }
+
+    /* ─── Code Blocks ─────────────────────────────────────────────────── */
+    .code-block {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin: 20px 0;
+    }
+
+    .code-block-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .code-lang {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .copy-btn {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 3px 10px;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+
+    .copy-btn:hover { color: var(--text); border-color: var(--border-hi); }
+    .copy-btn.copied { color: var(--green); border-color: rgba(74,222,128,0.3); }
+
+    .code-block pre {
+      padding: 20px;
+      overflow-x: auto;
+      margin: 0;
+    }
+
+    .code-block code {
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      line-height: 1.7;
+      background: none;
+      border: none;
+      padding: 0;
+      color: var(--text);
+      -webkit-text-fill-color: var(--text);
+    }
+
+    /* ─── Syntax Highlighting ─────────────────────────────────────────── */
+    .kw  { color: #c084fc; }   /* keyword */
+    .str { color: #86efac; }   /* string  */
+    .cm  { color: #52525b; font-style: italic; } /* comment */
+    .num { color: #fb923c; }   /* number  */
+    .fn  { color: #93c5fd; }   /* function */
+    .typ { color: #34d399; }   /* type    */
+    .op  { color: #a78bfa; }   /* operator */
+    .prop{ color: #fcd34d; }   /* property*/
+    .attr{ color: #f9a8d4; }   /* attribute */
+    .tag { color: #f87171; }   /* tag     */
+
+    /* ─── Tabs ────────────────────────────────────────────────────────── */
+    .tab-group { margin: 20px 0; }
+
+    .tab-nav {
+      display: flex;
+      gap: 2px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: -1px;
+    }
+
+    .tab-btn {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: 8px 16px 9px;
+      cursor: pointer;
+      transition: all 0.12s;
+      margin-bottom: -1px;
+    }
+
+    .tab-btn:hover { color: var(--text); }
+
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ─── API Reference Table ─────────────────────────────────────────── */
+    .api-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      margin: 16px 0 24px;
+    }
+
+    .api-table th {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-dim);
+      text-align: left;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .api-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .api-table tr:last-child td { border-bottom: none; }
+    .api-table tr:hover td { background: var(--surface2); }
+
+    .api-table .param-name {
+      font-family: var(--mono);
+      color: var(--yellow);
+      white-space: nowrap;
+    }
+
+    .api-table .param-type {
+      font-family: var(--mono);
+      color: var(--green);
+      white-space: nowrap;
+    }
+
+    .param-required {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--red);
+      background: rgba(248,113,113,0.08);
+      border: 1px solid rgba(248,113,113,0.2);
+      border-radius: 4px;
+      padding: 1px 6px;
+    }
+
+    .param-optional {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+    }
+
+    /* ─── Alert / Callout ─────────────────────────────────────────────── */
+    .callout {
+      display: flex;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: var(--radius);
+      margin: 20px 0;
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+
+    .callout-icon { flex-shrink: 0; font-size: 0.9rem; margin-top: 1px; }
+
+    .callout p { margin: 0; }
+
+    .callout.note {
+      background: rgba(96,165,250,0.06);
+      border: 1px solid rgba(96,165,250,0.2);
+      color: #93c5fd;
+    }
+
+    .callout.warning {
+      background: rgba(251,146,60,0.06);
+      border: 1px solid rgba(251,146,60,0.2);
+      color: #fdba74;
+    }
+
+    .callout.tip {
+      background: rgba(74,222,128,0.06);
+      border: 1px solid rgba(74,222,128,0.2);
+      color: #86efac;
+    }
+
+    /* ─── Method Signature ────────────────────────────────────────────── */
+    .method-sig {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      margin: 16px 0;
+      overflow-x: auto;
+      white-space: pre;
+      line-height: 1.5;
+    }
+
+    /* ─── Return badge ────────────────────────────────────────────────── */
+    .returns-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--blue);
+      background: rgba(96,165,250,0.08);
+      border: 1px solid rgba(96,165,250,0.2);
+      border-radius: 5px;
+      padding: 3px 10px;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+
+    /* ─── Hero Install Block ──────────────────────────────────────────── */
+    .install-block {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 14px 18px;
+      margin-bottom: 12px;
+    }
+
+    .install-prefix {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      flex-shrink: 0;
+    }
+
+    .install-cmd {
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      color: var(--text);
+      flex: 1;
+    }
+
+    /* ─── Feature chips ───────────────────────────────────────────────── */
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0; }
+
+    .chip {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 12px;
+    }
+
+    .chip-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ─── Error list ──────────────────────────────────────────────────── */
+    .error-list { list-style: none; margin: 16px 0; }
+
+    .error-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      margin-bottom: 8px;
+      font-size: 0.84rem;
+    }
+
+    .error-list li.err-auth {
+      background: rgba(248,113,113,0.06);
+      border: 1px solid rgba(248,113,113,0.15);
+    }
+
+    .error-list li.err-rate {
+      background: rgba(251,146,60,0.06);
+      border: 1px solid rgba(251,146,60,0.15);
+    }
+
+    .error-list li.err-plan {
+      background: rgba(250,204,21,0.06);
+      border: 1px solid rgba(250,204,21,0.15);
+    }
+
+    .error-list li.err-tmpl {
+      background: rgba(96,165,250,0.06);
+      border: 1px solid rgba(96,165,250,0.15);
+    }
+
+    .error-code {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      font-weight: 600;
+      flex-shrink: 0;
+      padding-top: 1px;
+    }
+
+    .err-auth .error-code { color: var(--red); }
+    .err-rate .error-code { color: var(--orange); }
+    .err-plan .error-code { color: var(--yellow); }
+    .err-tmpl .error-code { color: var(--blue); }
+
+    .error-desc { color: var(--text-muted); line-height: 1.5; }
+
+    /* ─── Quick-nav cards ─────────────────────────────────────────────── */
+    .quick-nav {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 12px;
+      margin: 32px 0 8px;
+    }
+
+    .qn-card {
+      display: block;
+      padding: 16px 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      transition: border-color 0.15s, background 0.15s;
+      text-decoration: none;
+    }
+
+    .qn-card:hover {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+      text-decoration: none;
+    }
+
+    .qn-icon {
+      font-size: 1.2rem;
+      margin-bottom: 8px;
+    }
+
+    .qn-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .qn-desc {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* ─── Footer ──────────────────────────────────────────────────────── */
+    #doc-footer {
+      margin-top: 80px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.78rem;
+      color: var(--text-dim);
+    }
+
+    /* ─── Responsive ──────────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      #sidebar { display: none; }
+      #content { margin-left: 0; padding: 40px 24px 80px; }
+    }
+
+    /* ─── Transitions ─────────────────────────────────────────────────── */
+    .doc-section { opacity: 0; transform: translateY(16px); animation: fadeUp 0.5s ease forwards; }
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .doc-section:nth-child(1) { animation-delay: 0.05s; }
+    .doc-section:nth-child(2) { animation-delay: 0.10s; }
+    .doc-section:nth-child(3) { animation-delay: 0.15s; }
+    .doc-section:nth-child(4) { animation-delay: 0.20s; }
+    .doc-section:nth-child(5) { animation-delay: 0.25s; }
+    .doc-section:nth-child(6) { animation-delay: 0.30s; }
+    .doc-section:nth-child(7) { animation-delay: 0.35s; }
+    .doc-section:nth-child(8) { animation-delay: 0.40s; }
+    .doc-section:nth-child(9) { animation-delay: 0.45s; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .doc-section { animation: none; opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── Top Header ─────────────────────────────────────────────────────── -->
+<header id="top-header">
+  <div class="header-left">
+    <a class="logo" href="#">
+      <div class="logo-mark">100</div>
+      100Prints
+    </a>
+    <div class="header-divider"></div>
+    <span class="header-tag">Browser SDK</span>
+    <div class="header-badge">v1.0.0</div>
+  </div>
+  <div class="header-right">
+    <a class="header-link" href="https://100printswith.me" target="_blank">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      Platform
+    </a>
+    <a class="header-link" href="https://github.com" target="_blank">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.929.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+      GitHub
+    </a>
+  </div>
+</header>
+
+<!-- ─── Layout ──────────────────────────────────────────────────────────── -->
+<div id="layout">
+
+  <!-- ─── Sidebar ──────────────────────────────────────────────────────── -->
+  <nav id="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Getting Started</div>
+      <a class="sidebar-link active" href="#overview"><span class="sidebar-dot"></span>Overview</a>
+      <a class="sidebar-link" href="#installation"><span class="sidebar-dot"></span>Installation</a>
+      <a class="sidebar-link" href="#quickstart"><span class="sidebar-dot"></span>Quick Start</a>
+      <a class="sidebar-link" href="#authentication"><span class="sidebar-dot"></span>Authentication</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">SDK Reference</div>
+      <a class="sidebar-link" href="#constructor"><span class="sidebar-dot"></span>BrowserSDK()</a>
+      <a class="sidebar-link" href="#render"><span class="sidebar-dot"></span>sdk.render()</a>
+      <a class="sidebar-link" href="#preview"><span class="sidebar-dot"></span>sdk.preview()</a>
+      <a class="sidebar-link" href="#renderBulk"><span class="sidebar-dot"></span>sdk.renderBulk()</a>
+      <a class="sidebar-link" href="#destroy"><span class="sidebar-dot"></span>sdk.destroy()</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Types</div>
+      <a class="sidebar-link" href="#types-options"><span class="sidebar-dot"></span>BrowserSDKOptions</a>
+      <a class="sidebar-link" href="#types-render"><span class="sidebar-dot"></span>RenderOptions</a>
+      <a class="sidebar-link" href="#types-bulk"><span class="sidebar-dot"></span>BulkRenderOptions</a>
+      <a class="sidebar-link" href="#types-preview"><span class="sidebar-dot"></span>PreviewOptions</a>
+      <a class="sidebar-link" href="#types-results"><span class="sidebar-dot"></span>Result Types</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Guides</div>
+      <a class="sidebar-link" href="#guide-payload"><span class="sidebar-dot"></span>Building Payloads</a>
+      <a class="sidebar-link" href="#guide-bulk"><span class="sidebar-dot"></span>Bulk Rendering</a>
+      <a class="sidebar-link" href="#guide-framework"><span class="sidebar-dot"></span>Framework Integration</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Reference</div>
+      <a class="sidebar-link" href="#errors"><span class="sidebar-dot"></span>Errors &amp; Codes</a>
+      <a class="sidebar-link" href="#limits"><span class="sidebar-dot"></span>Rate Limits</a>
+      <a class="sidebar-link" href="#changelog"><span class="sidebar-dot"></span>Changelog</a>
+    </div>
+  </nav>
+
+  <!-- ─── Main Content ──────────────────────────────────────────────────── -->
+  <main id="content">
+
+    <!-- OVERVIEW -->
+    <section class="doc-section" id="overview">
+      <div class="hero-eyebrow">@100prints/browser-sdk</div>
+      <h1 class="hero-title">100Prints Browser SDK</h1>
+      <p class="hero-sub">
+        Render, export, and bulk-generate 100Prints templates directly in the browser — as pixel-perfect PDFs or PNGs — using a publishable API key. No server required.
+      </p>
+
+      <div class="chip-row">
+        <span class="chip"><span class="chip-dot" style="background:var(--green)"></span>PDF &amp; PNG export</span>
+        <span class="chip"><span class="chip-dot" style="background:var(--blue)"></span>Bulk rendering</span>
+        <span class="chip"><span class="chip-dot" style="background:var(--accent)"></span>Live preview canvas</span>
+        <span class="chip"><span class="chip-dot" style="background:var(--orange)"></span>TypeScript native</span>
+        <span class="chip"><span class="chip-dot" style="background:var(--pink)"></span>Zero runtime deps</span>
+        <span class="chip"><span class="chip-dot" style="background:var(--yellow)"></span>ESM + UMD</span>
+      </div>
+
+      <div class="quick-nav">
+        <a class="qn-card" href="#installation">
+          <div class="qn-icon">📦</div>
+          <div class="qn-title">Installation</div>
+          <div class="qn-desc">Install via npm or load from CDN</div>
+        </a>
+        <a class="qn-card" href="#quickstart">
+          <div class="qn-icon">⚡</div>
+          <div class="qn-title">Quick Start</div>
+          <div class="qn-desc">Render your first template in 60 seconds</div>
+        </a>
+        <a class="qn-card" href="#render">
+          <div class="qn-icon">🖨️</div>
+          <div class="qn-title">sdk.render()</div>
+          <div class="qn-desc">Export PDF or PNG from any template</div>
+        </a>
+        <a class="qn-card" href="#guide-bulk">
+          <div class="qn-icon">📚</div>
+          <div class="qn-title">Bulk Rendering</div>
+          <div class="qn-desc">Generate hundreds of cards at once</div>
+        </a>
+      </div>
+    </section>
+
+    <!-- INSTALLATION -->
+    <section class="doc-section" id="installation">
+      <h2>Installation <a class="anchor" href="#installation">#</a></h2>
+      <p>Install the SDK from npm. All rendering dependencies are bundled — no peer dependencies are required.</p>
+
+      <div class="install-block">
+        <span class="install-prefix">npm</span>
+        <span class="install-cmd">npm install @100prints/browser-sdk</span>
+        <button class="copy-btn" onclick="copyText(this,'npm install @100prints/browser-sdk')">copy</button>
+      </div>
+
+      <div class="install-block">
+        <span class="install-prefix">pnpm</span>
+        <span class="install-cmd">pnpm add @100prints/browser-sdk</span>
+        <button class="copy-btn" onclick="copyText(this,'pnpm add @100prints/browser-sdk')">copy</button>
+      </div>
+
+      <div class="install-block">
+        <span class="install-prefix">yarn</span>
+        <span class="install-cmd">yarn add @100prints/browser-sdk</span>
+        <button class="copy-btn" onclick="copyText(this,'yarn add @100prints/browser-sdk')">copy</button>
+      </div>
+
+      <h3>CDN (UMD)</h3>
+      <p>Include the UMD build directly in any HTML page without a build step.</p>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-lang">HTML</span>
+          <button class="copy-btn" onclick="copyBlock(this)">copy</button>
+        </div>
+        <pre><code><span class="tag">&lt;script</span> <span class="attr">src</span>=<span class="str">"https://cdn.jsdelivr.net/npm/@100prints/browser-sdk/dist/100prints-sdk.umd.js"</span><span class="tag">&gt;&lt;/script&gt;</span>
+<span class="tag">&lt;script&gt;</span>
+  <span class="kw">const</span> <span class="prop">sdk</span> = <span class="kw">new</span> <span class="typ">BrowserSDK100Prints</span>.<span class="fn">BrowserSDK</span>({
+    <span class="prop">key</span>: <span class="str">'pk_live_...'</span>
+  });
+<span class="tag">&lt;/script&gt;</span></code></pre>
+      </div>
+    </section>
+
+    <!-- QUICK START -->
+    <section class="doc-section" id="quickstart">
+      <h2>Quick Start <a class="anchor" href="#quickstart">#</a></h2>
+      <p>Initialize the SDK with your publishable key and render a template to a downloadable PDF in under 10 lines of code.</p>
+
+      <div class="tab-group" data-tabs="quickstart-tabs">
+        <div class="tab-nav">
+          <button class="tab-btn active" onclick="switchTab(this,'qs-ts')">TypeScript</button>
+          <button class="tab-btn" onclick="switchTab(this,'qs-js')">JavaScript</button>
+          <button class="tab-btn" onclick="switchTab(this,'qs-react')">React</button>
+        </div>
+
+        <div id="qs-ts" class="tab-panel active">
+          <div class="code-block">
+            <div class="code-block-header"><span class="code-lang">TypeScript</span><button class="copy-btn" onclick="copyBlock(this)">copy</button></div>
+            <pre><code><span class="kw">import</span> { <span class="typ">BrowserSDK</span> } <span class="kw">from</span> <span class="str">'@100prints/browser-sdk'</span>;
+
+<span class="cm">// 1. Initialize once (use your publishable key — safe to expose)</span>
+<span class="kw">const</span> <span class="prop">sdk</span> = <span class="kw">new</span> <span class="typ">BrowserSDK</span>({
+  <span class="prop">key</span>: <span class="str">'pk_live_xxxxxxxxxxxxxxxxxx'</span>,
+});
+
+<span class="cm">// 2. Render a template to PDF</span>
+<span class="kw">const</span> <span class="prop">result</span> = <span class="kw">await</span> <span class="prop">sdk</span>.<span class="fn">render</span>({
+  <span class="prop">templateId</span>: <span class="str">'template_abc123'</span>,
+  <span class="prop">payload</span>: {
+    <span class="prop">name</span>:  <span class="str">'Rishabh Dev'</span>,
+    <span class="prop">email</span>: <span class="str">'rishabh@example.com'</span>,
+    <span class="prop">role</span>:  <span class="str">'Software Engineer'</span>,
+    <span class="prop">photo</span>: <span class="str">'https://cdn.example.com/photo.jpg'</span>,
+  },
+  <span class="prop">format</span>:  <span class="str">'pdf'</span>,
+  <span class="prop">quality</span>: <span class="str">'high'</span>,
+  <span class="prop">side</span>:    <span class="str">'both'</span>,
+});
+
+<span class="cm">// 3. Trigger browser download</span>
+<span class="kw">const</span> <span class="prop">url</span>  = <span class="typ">URL</span>.<span class="fn">createObjectURL</span>(<span class="prop">result</span>.<span class="prop">blob</span>);
+<span class="kw">const</span> <span class="prop">link</span> = <span class="typ">document</span>.<span class="fn">createElement</span>(<span class="str">'a'</span>);
+<span class="prop">link</span>.<span class="prop">href</span>     = <span class="prop">url</span>;
+<span class="prop">link</span>.<span class="prop">download</span> = <span class="str">'badge.pdf'</span>;
+<span class="prop">link</span>.<span class="fn">click</span>();
+<span class="typ">URL</span>.<span class="fn">revokeObjectURL</span>(<span class="prop">url</span>);</code></pre>
+          </div>
+        </div>
+
+        <div id="qs-js" class="tab-panel">
+          <div class="code-block">
+            <div class="code-block-header"><span class="code-lang">JavaScript</span><button class="copy-btn" onclick="copyBlock(this)">copy</button></div>
+            <pre><code><span class="kw">import</span> { <span class="typ">BrowserSDK</span> } <span class="kw">from</span> <span class="str">'@100prints/browser-sdk'</span>;
+
+<span class="kw">const</span> <span class="prop">sdk</span> = <span class="kw">new</span> <span class="typ">BrowserSDK</span>({ <span class="prop">key</span>: <span class="str">'pk_live_...'</span> });
+
+<span class="kw">const</span> { <span class="prop">blob</span> } = <span class="kw">await</span> <span class="prop">sdk</span>.<span class="fn">render</span>({
+  <span class="prop">templateId</span>: <span class="str">'template_abc123'</span>,
+  <span class="prop">payload</span>: { <span class="prop">name</span>: <span class="str">'Rishabh Dev'</span>, <span class="prop">role</span>: <span class="str">'Engineer'</span> },
+  <span class="prop">format</span>: <span class="str">'png'</span>,
+});
+
+<span class="kw">const</span> <span class="prop">url</span> = <span class="typ">URL</span>.<span class="fn">createObjectURL</span>(<span class="prop">blob</span>);
+<span class="prop">document</span>.<span class="fn">getElementById</span>(<span class="str">'preview-img'</span>).<span class="prop">src</span> = <span class="prop">url</span>;</code></pre>
+          </div>
+        </div>
+
+        <div id="qs-react" class="tab-panel">
+          <div class="code-block">
+            <div class="code-block-header"><span class="code-lang">React</span><button class="copy-btn" onclick="copyBlock(this)">copy</button></div>
+            <pre><code><span class="kw">import</span> { useRef, useCallback } <span class="kw">from</span> <span class="str">'react'</span>;
+<span class="kw">import</span> { <span class="typ">BrowserSDK</span> } <span class="kw">from</span> <span class="str">'@100prints/browser-sdk'</span>;
+
+<span class="cm">// Initialize once outside the component (stable across renders)</span>
+<span class="kw">const</span> <span class="prop">sdk</span> = <span class="kw">new</span> <span class="typ">BrowserSDK</span>({ <span class="prop">key</span>: <span class="str">'pk_live_...'</span> });
+
+<span class="kw">export function</span> <span class="fn">BadgeExporter</span>({ <span class="prop">employee</span> }) {
+  <span class="kw">const</span> <span class="prop">previewRef</span> = <span class="fn">useRef</span>(<span class="kw">null</span>);
+
+  <span class="kw">const</span> <span class="prop">handlePreview</span> = <span class="fn">useCallback</span>(<span class="kw">async</span> () => {
+    <span class="kw">await</span> <span class="prop">sdk</span>.<span class="fn">preview</span>({
+      <span class="prop">templateId</span>: <span class="str">'template_abc123'</span>,
+      <span class="prop">payload</span>:    <span class="prop">employee</span>,
+      <span class="prop">container</span>:  <span class="prop">previewRef</span>.<span class="prop">current</span>,
+    });
+  }, [<span class="prop">employee</span>]);
+
+  <span class="kw">const</span> <span class="prop">handleExport</span> = <span class="fn">useCallback</span>(<span class="kw">async</span> () => {
+    <span class="kw">const</span> { <span class="prop">blob</span> } = <span class="kw">await</span> <span class="prop">sdk</span>.<span class="fn">render</span>({
+      <span class="prop">templateId</span>: <span class="str">'template_abc123'</span>,
+      <span class="prop">payload</span>: <span class="prop">employee</span>,
+      <span class="prop">format</span>: <span class="str">'pdf'</span>, <span class="prop">quality</span>: <span class="str">'high'</span>,
+    });
+    <span class="kw">const</span> <span class="prop">a</span> = <span class="typ">document</span>.<span class="fn">createElement</span>(<span class="str">'a'</span>);
+    <span class="prop">a</span>.<span class="prop">href</span>     = <span class="typ">URL</span>.<span class="fn">createObjectURL</span>(<span class="prop">blob</span>);
+    <span class="prop">a</span>.<span class="prop">download</span> = <span class="str">'badge.pdf'</span>;
+    <span class="prop">a</span>.<span class="fn">click</span>();
+  }, [<span class="prop">employee</span>]);
+
+  <span class="kw">return</span> (
+    <span class="tag">&lt;div&gt;</span>
+      <span class="tag">&lt;div</span> <span class="attr">ref</span>=<span class="str">{previewRef}</span> <span class="attr">style</span>=<span class="str">{{ width: 428, height: 270 }}</span> <span class="tag">/&gt;</span>
+      <span class="tag">&lt;button</span> <span class="attr">onClick</span>=<span class="str">{handlePreview}</span><span class="tag">&gt;</span>Preview<span class="tag">&lt;/button&gt;</span>
+      <span class="tag">&lt;button</span> <span class="attr">onClick</span>=<span class="str">{handleExport}</span><span class="tag">&gt;</span>Export PDF<span class="tag">&lt;/button&gt;</span>
+    <span class="tag">&lt;/div&gt;</span>
+  );
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AUTHENTICATION -->
+    <section class="doc-section" id="authentication">
+      <h2>Authentication <a class="anchor" href="#authentication">#</a></h2>
+      <p>
+        The SDK uses a <strong>publishable key</strong> — it is safe to include in client-side JavaScript. Publishable keys have the prefix <code>pk_live_</code>.
+        Never use your secret API key on the client side.
+      </p>
+
+      <div class="callout note">
+        <span class="callout-icon">ℹ</span>
+        <p>Publishable keys are scoped to specific templates and plans. You control which templates a key may access from the 100Prints dashboard.</p>
+      </div>
+
+      <h3>Key Permissions</h3>
+      <p>Each key is granted access via the <code>keys</code> table which stores fine-grained permissions per key:</p>
+
+      <table class="api-table">
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="param-name">key</td>
+            <td>Publishable key string — safe to use in browser code</td>
+          </tr>
+          <tr>
+            <td class="param-name">key_type</td>
+            <td>Always <code>sdk</code> for Browser SDK keys. Other types include <code>wordpress</code> etc.</td>
+          </tr>
+          <tr>
+            <td class="param-name">permission</td>
+            <td>JSON object. <code>{ "templates": "all" }</code> or <code>{ "templates": ["id1", "id2"] }</code></td>
+          </tr>
+          <tr>
+            <td class="param-name">plan_required</td>
+            <td>Endpoint enforces <strong>non-free plan</strong> (Pro, Enterprise, etc.)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout warning">
+        <span class="callout-icon">⚠</span>
+        <p>SDK access requires at least a <strong>Pro</strong> plan. Free accounts cannot generate publishable keys.</p>
+      </div>
+    </section>
+
+    <!-- CONSTRUCTOR -->
+    <section class="doc-section" id="constructor">
+      <h2>BrowserSDK() <a class="anchor" href="#constructor">#</a></h2>
+      <p>Creates an SDK instance. Instantiate once and reuse across your application — the SDK internally caches template data.</p>
+
+      <div class="method-sig"><span class="kw">new</span> <span class="typ">BrowserSDK</span>(<span class="prop">options</span>: <span class="typ">BrowserSDKOptions</span>): <span class="typ">BrowserSDK</span></div>
+
+      <table class="api-table">
+        <thead>
+          <tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="param-name">key</td>
+            <td class="param-type">string</td>
+            <td><span class="param-required">required</span></td>
+            <td>Your publishable key (<code>pk_live_...</code>)</td>
+          </tr>
+          <tr>
+            <td class="param-name">baseUrl</td>
+            <td class="param-type">string</td>
+            <td><span class="param-optional">optional</span></td>
+            <td>Override the API base URL. Defaults to <code>https://api.100printswith.me</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="code-block">
+        <div class="code-block-header"><span class="code-lang">TypeScript</span><button class="copy-btn" onclick="copyBlock(this)">copy</button></div>
+        <pre><code><span class="kw">import</span> { <span class="typ">BrowserSDK</span> } <span class="kw">from</span> <span class="str">'@100prints/browser-sdk'</span>;
+
+<span class="kw">const</span> <span class="prop">sdk</span> = <span class="kw">new</span> <span class="typ">BrowserSDK</span>({
+  <span class="prop">key</span>: <span class="str">'pk_live_xxxxxxxxxxxxxxxxxx'</span>,
+  <span class="cm">// Optional: override API base for self-hosted deployments</span>
+  <span class="prop">baseUrl</span>: <span class="str">'https://my.100prints.instance.com'</span>,
+});</code></pre>
+      </div>
+    </section>
+
+    <!-- SDK.RENDER -->
+    <section class="doc-section" id="render">
+      <h2>sdk.render() <a class="anchor" href="#render">#</a></h2>
+      <p>
+        Fetches a template from the API, resolves all variable placeholders with the provided payload, and renders it to a <strong>Blob</strong> — either as a PDF or PNG.
+        Template data is cached after the first fetch.
+      </p>
+
+      <div class="method-sig"><span class="prop">sdk</span>.<span class="fn">render</span>(<span class="prop">options</span>: <span class="typ">RenderOptions</span>): <span class="typ">Promise</span>&lt;<span class="typ">RenderResult</span>&gt;</div>
+
+      <h3>Parameters</h3>
+      <table class="api-table">
+        <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="param-name">templateId</td>
+            <td class="param-type">string</td>
+            <td><span class="param-required">required</span></td>
+            <td>The template identifier from 100Prints</td>
+          </tr>
+          <tr>
+            <td class="param-name">payload</td>
+            <td class="param-type">Record&lt;string, any&gt;</td>
+            <td><span class="param-optional">optional</span></td>
+            <td>Key-value pairs that replace <code>{{variable}}</code> placeholders in the template</td>
+          </tr>
+          <tr>
+            <td class="param-name">format</td>
+            <td class="param-type">'pdf' | 'png'</td>
+            <td><span class="param-optional">optional</span></td>
+            <td>Output format. Defaults to <code>'pdf'</code></td>
+          </tr>
+          <tr>
+            <td class="param-name">quality</td>
+            <td class="param-type">'draft' | 'standard' | 'high' | 'ultra'</td>
+            <td><span class="param-optional">optional</span></td>
+            <td>Export DPI. <code>draft</code>=72, <code>standard</code>=150, <code>high</code>=300, <code>ultra</code>=600. Defaults to <code>'high'</code></td>
+          </tr>
+          <tr>
+            <td class="param-name">side</td>
+            <td class="param-type">'front' | 'back' | 'both'</td>
+            <td><span class="param-optional">optional</span></td>
+            <td>Which side(s) to render. PDF renders both as pages. PNG renders front unless <code>'back'</code> is specified. Defaults to <code>'both'</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Returns — <code>RenderResult</code></h3>
+      <table class="api-table">
+        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td class="param-name">blob</td><td class="param-type">Blob</td><td>The rendered file as a browser Blob</td></tr>
+          <tr><td class="param-name">mimeType</td><td class="param-type">string</td><td><code>application/pdf</code> or <code>image/png</code></td></tr>
+          <tr><td class="param-name">sizeKB</td><td class="param-type">number</td><td>Approximate output file size in kilobytes</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Quality / DPI Reference</h3>
+      <table class="api-table">
+        <thead><tr><th>Value</th><th>DPI</th><th>Scale Factor</th><th>Best For</th></tr></thead>
+        <tbody>
+          <tr><td class="param-name">draft</td><td>72</td><td>1×</td><td>Screen preview, rapid generation</td></tr>
+          <tr><td class="param-name">standard</td><td>150</td><td>2×</td><td>Digital-only distribution</td></tr>
+          <tr><td class="param-name">high</td><td>300</td><td>4×</td><td>Print-ready — <strong>recommended</strong></td></tr>
+          <tr><td class="param-name">ultra</td><td>600</td><td>8×</td><td>Large-format / high-end print</td></tr>
+        </tbody>
+      </table>
+
+      <div class="code-block">
+        <div class="code-block-header"><span class="code-lang">TypeScript — PDF export with full options</span><button class="copy-btn" onclick="copyBlock(this)">copy</button></div>
+        <pre><code><span class="kw">const</span> <span class="prop">result</span> = <span class="kw">await</span> <span class="prop">sdk</span>.<span class="fn">render</span>({
+  <span class="prop">templateId</span>: <span class="str">'template_abc123'</span>,
+  <span class="prop">payload</span>: {
+    <span class="prop">name</span>:       <span class="str">'Rishabh Dev'</span>,
+    <span class="prop">email</span>:      <span class="str">'rishabh@example.com'</span>,
+    <span class="prop">role</span>:       <span class="str">'Senior Engineer'</span>,
+    <span class="prop">department</span>: <span class="str">'Platform'</span>,
+    <span class="prop">photo</span>:      <span class="str">'https://cdn.example.com/photo.jpg'</span>,
+    <span class="prop">qr_data</span>:    <span class="str">'https://example.com/badge/12345'</span>,
+  },
+  <span class="prop">format</span>:  <span class="str">'pdf'</span>,   <span class="cm">// print-quality PDF</span>
+  <span class="prop">quality</span>: <span class="str">'high'</span>,  <span class="cm">// 300 DPI</span>
+  <span class="prop">side</span>:    <span class="str">'both'</span>,  <span class="cm">// front + back as separate pages</span>
+});
+
+<span class="cm">// result.blob     → Blob (application/pdf)</span>
+<span class="cm">// result.mimeType → 'application/pdf'</span>
+<span class="cm">// result.sizeKB   → e.g. 284</span>
+
+<span class="fn">downloadBlob</span>(<span class="prop">result</span>.<span class="prop">blob</span>, <span class="str">'badge.pdf'</span>);
+
+<span class="cm">// Utility helper:</span>
+<span class="kw">function</span> <span class="fn">downloadBlob</span>(<span class="prop">blob</span>: <span class="typ">Blob</span>, <span class="prop">filename</span>: <span class="typ">string</span>) {
+  <span class="kw">const</span> <span class="prop">a</span> = <span class="typ">document</span>.<span class="fn">createElement</span>(<span class="str">'a'</span>);
+  <span class="prop">a</span>.<span class="prop">href</span> = <span class="typ">URL</span>.<span class="fn">createObjectURL</span>(<span class="prop">blob</span>);
+  <span class="prop">a</span>.<span class="prop">download</span> = <span class="prop">filename</span>;
+  <span class="prop">a</span>.<span class="fn">click</span>();
+  <span class="typ">URL</span>.<span class="fn">revokeObjectURL</span>(<span class="prop">a</span>.<span class="prop">href</span>);
+}</code></pre>
+      </div>
+    </section>
+
+    <!-- SDK.PREVIEW -->
+    <section class="doc-section" id="preview">
+      <h2>sdk.preview() <a class="anchor" href="#preview">#</a></h2>
+      <p>
+        Renders a live interactive Konva canvas directly into a DOM container. Ideal for showing a real-time preview to users before they confirm an export.
+        No blob is generated — this is rendering-only.
+      </p>
+
+      <div class="method-sig"><span class="prop">sdk</span>.<span class="fn">preview</span>(<span class="prop">options</span>: <span class="typ">PreviewOptions</span>): <span class="typ">Promise</span>&lt;<span class="typ">HTMLCanvasElement</span>&gt;</div>
+
+      <h3>Parameters</h3>
+      <table class="api-table">
+        <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="param-name">templateId</td>
+            <td class="param-type">string</td>
+            <td><span class="param-required">required</span></td>
+            <td>The template to preview</td>
+          </tr>
+          <tr>
+            <td class="param-name">container</td>
+            <td class="param-type">HTMLElement</td>
+            <td><span class="param-required">required</span></td>
+            <td>DOM element into which the Konva canvas is rendered. Existing children are cleared.</td>
+          </tr>
+          <tr>
+            <td class="param-name">payload</td>
+            <td class="param-type">Record&lt;string, any&gt;</td>
+            <td><span class="param-optional">optional</span></td>
+            <td>Variable values to substitute. Pass an empty object <code>{}</code> to see default values.</td>
+          </tr>
+          <tr>
+            <td class="param-name">scale</td>
+            <td class="param-type">number</td>
+            <td><span class="param-optional">optional</span></td>
+            <td>Scales the Konva stage. <code>0.5</code> renders at half size, <code>1</code> (default) renders at native template dimensions.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout tip">
+        <span class="callout-icon">✓</span>
+        <p>The container element is sized by the Konva stage, not by your CSS. Set a <code>max-width</code> wrapper and use <code>scale</code> to control the canvas size in the page.</p>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-header"><span class="code-lang">TypeScript</span><button class="copy-btn" onclick="copyBlock(this)">copy</button></div>
+        <pre><code><span class="kw">const</span> <span class="prop">container</span> = <span class="typ">document</span>.<span class="fn">getElementById</span>(<span class="str">'preview-area'</span>)<span class="op">!</span>;
+
+<span class="cm">// Render front at 50% scale (fits in a 428px wide container)</span>
+<span class="kw">const</span> <span class="prop">canvas</span> = <span class="kw">await</span> <span class="prop">sdk</span>.<span class="fn">preview</span>({
+  <span class="prop">templateId</span>: <span class="str">'template_abc123'</span>,
+  <span class="prop">container</span>:  <span class="prop">container</span>,
+  <span class="prop">payload</span>:    { <span class="prop">name</span>: <span class="str">'Rishabh Dev'</span>, <span class="prop">role</span>: <span class="str">'Engineer'</span> },
+  <span class="prop">scale</span>:      <span class="num">0.5</span>,
+});
+
+<span class="cm">// Returns the raw HTMLCanvasElement if you need further operations</span>
+<span class="prop">canvas</span>.<span class="fn">toBlob</span>((<span class="prop">blob</span>) => { <span class="cm">/* custom usage */</span> });</code></pre>
+      </div>
+    </section>
+
+    <!-- SDK.RENDERBULK -->
+    <section class="doc-section" id="renderBulk">
+      <h2>sdk.renderBulk() <a class="anchor" href="#renderBulk">#</a></h2>
+      <p>
+        Renders multiple records against a single template and packages the results as either a <strong>merged PDF</strong> (one page per record) or a <strong>ZIP archive</strong> containing individual PNG or PDF files.
+      </p>
+
+      <div class="method-sig"><span class="prop">sdk</span>.<span class="fn">renderBulk</span>(<span class="prop">options</span>: <span class="typ">BulkRenderOptions</span>): <span class="typ">Promise</span>&lt;<span class="typ">BulkRenderResult</span>&gt;</div>
+
+      <h3>Parameters</h3>
+      <table class="api-table">
+        <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="param-name">templateId</td>
+            <td class="param-type">string</td>
+            <td><span class="param-required">required</span></td>
+            <td>Template to render for all rows</td>
+          </tr>
+          <tr>
+            <td class="param-name">rows</td>
+            <td class="param-type">Record&lt;string, any&gt;[]</td>
+            <td><span class="param-required">required</span></td>
+            <td>Array of payload objects. One document is generated per row.</td>
+          </tr>
+          <tr>
+            <td class="param-name">format</td>
+            <td class="param-type">'pdf' | 'png'</td>
+            <td><span class="param-optional">optional</span></td>
+            <td>Format for individual records. Defaults to <code>'pdf'</code></td>
+          </tr>
+          <tr>
+            <td class="param-name">quality</td>
+            <td class="param-type">'draft' | 'standard' | 'high' | 'ultra'</td>
+            <td><span class="param-optional">optional</span></td>
+            <td>Export DPI. Defaults to <code>'high'</code></td>
+          </tr>
+          <tr>
+            <td class="param-name">mode</td>
+            <td class="param-type">'merged' | 'zip'</td>
+            <td><span class="param-optional">optional</span></td>
+            <td><code>'merged'</code>: single PDF with all records as pages (PDF only). <code>'zip'</code>: individual files in a ZIP archive. Defaults to <code>'merged'</code></td>
+          </tr>
+          <tr>
+            <td class="param-name">onProgress</td>
+            <td class="param-type">(current, total, name) => void</td>
+            <td><span class="param-optional">optional</span></td>
+            <td>Progress callback called after each record is rendered. Use to update a progress bar.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Returns — <code>BulkRenderResult</code></h3>
+      <table class="api-table">
+        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td class="param-name">blob</td><td class="param-type">Blob</td><td>The output file (merged PDF or ZIP archive)</td></tr>
+          <tr><td class="param-name">filename</td><td class="param-type">string</td><td>Suggested filename for the download, e.g. <code>BadgeTemplate_Export.pdf</code></td></tr>
+          <tr><td class="param-name">sizeKB</td><td class="param-type">number</td><td>Output file size in kilobytes</td></tr>
+        </tbody>
+      </table>
+
+      <div class="code-block">
+        <div class="code-block-header"><span class="code-lang">TypeScript — Bulk export with progress</span><button class="copy-btn" onclick="copyBlock(this)">copy</button></div>
+        <pre><code><span class="kw">const</span> <span class="prop">employees</span> = [
+  { <span class="prop">name</span>: <span class="str">'Rishabh Dev'</span>,  <span class="prop">role</span>: <span class="str">'Engineer'</span>,   <span class="prop">dept</span>: <span class="str">'Platform'</span> },
+  { <span class="prop">name</span>: <span class="str">'Priya Sharma'</span>, <span class="prop">role</span>: <span class="str">'Designer'</span>,   <span class="prop">dept</span>: <span class="str">'Product'</span>  },
+  { <span class="prop">name</span>: <span class="str">'Alex Johnson'</span>, <span class="prop">role</span>: <span class="str">'Manager'</span>,    <span class="prop">dept</span>: <span class="str">'Ops'</span>      },
+];
+
+<span class="kw">const</span> <span class="prop">result</span> = <span class="kw">await</span> <span class="prop">sdk</span>.<span class="fn">renderBulk</span>({
+  <span class="prop">templateId</span>: <span class="str">'template_abc123'</span>,
+  <span class="prop">rows</span>:        <span class="prop">employees</span>,
+  <span class="prop">format</span>:      <span class="str">'pdf'</span>,
+  <span class="prop">quality</span>:     <span class="str">'high'</span>,
+  <span class="prop">mode</span>:        <span class="str">'merged'</span>,
+  <span class="prop">onProgress</span>:  (<span class="prop">current</span>, <span class="prop">total</span>, <span class="prop">name</span>) => {
+    <span class="prop">progressEl</span>.<span class="prop">textContent</span> = <span class="str">`Rendering ${name} (${current}/${total})`</span>;
+    <span class="prop">barEl</span>.<span class="prop">style</span>.<span class="prop">width</span>       = <span class="str">`${(current / total) * 100}%`</span>;
+  },
+});
+
+<span class="cm">// result.blob     → merged 3-page PDF Blob</span>
+<span class="cm">// result.filename → 'BadgeTemplate_Export.pdf'</span>
+<span class="cm">// result.sizeKB   → e.g. 812</span>
+
+<span class="fn">downloadBlob</span>(<span class="prop">result</span>.<span class="prop">blob</span>, <span class="prop">result</span>.<span class="prop">filename</span>);</code></pre>
+      </div>
+    </section>
+
+    <!-- SDK.DESTROY -->
+    <section class="doc-section" id="destroy">
+      <h2>sdk.destroy() <a class="anchor" href="#destroy">#</a></h2>
+      <p>Clears the internal template cache. Call this when unmounting the component that owns the SDK instance, or in single-page app route teardown.</p>
+
+      <div class="method-sig"><span class="prop">sdk</span>.<span class="fn">destroy</span>(): <span class="typ">void</span></div>
+
+      <div class="code-block">
+        <div class="code-block-header"><span class="code-lang">React — cleanup in useEffect</span><button class="copy-btn" onclick="copyBlock(this)">copy</button></div>
+        <pre><code><span class="kw">import</span> { useEffect, useRef } <span class="kw">from</span> <span class="str">'react'</span>;
+<span class="kw">import</span> { <span class="typ">BrowserSDK</span> } <span class="kw">from</span> <span class="str">'@100prints/browser-sdk'</span>;
+
+<span class="kw">export function</span> <span class="fn">MyComponent</span>() {
+  <span class="kw">const</span> <span class="prop">sdkRef</span> = <span class="fn">useRef</span>&lt;<span class="typ">BrowserSDK</span>&gt;(<span class="kw">null</span>);
+
+  <span class="fn">useEffect</span>(() => {
+    <span class="prop">sdkRef</span>.<span class="prop">current</span> = <span class="kw">new</span> <span class="typ">BrowserSDK</span>({ <span class="prop">key</span>: <span class="str">'pk_live_...'</span> });
+    <span class="kw">return</span> () => { <span class="prop">sdkRef</span>.<span class="prop">current</span>?.<span class="fn">destroy</span>(); };
+  }, []);
+
+  <span class="cm">// ...</span>
+}</code></pre>
+      </div>
+    </section>
+
+    <!-- TYPE REFERENCE -->
+    <section class="doc-section" id="types-options">
+      <h2>Type Reference <a class="anchor" href="#types-options">#</a></h2>
+      <p>All types are exported from <code>@100prints/browser-sdk</code> and available for import in TypeScript.</p>
+
+      <h3 id="types-options-h">BrowserSDKOptions</h3>
+      <div class="code-block">
+        <div class="code-block-header"><span class="code-lang">TypeScript</span></div>
+        <pre><code><span class="kw">interface</span> <span class="typ">BrowserSDKOptions</span> {
+  <span class="prop">key</span>:      <span class="typ">string</span>;          <span class="cm">// Publishable key (pk_live_...)</span>
+  <span class="prop">baseUrl</span>?: <span class="typ">string</span>;          <span class="cm">// Optional: override API base URL</span>
+}</code></pre>
+      </div>
+
+      <h3 id="types-render-h">RenderOptions</h3>
+      <div class="code-block">
+        <div class="code-block-header"><span class="code-lang">TypeScript</span></div>
+        <pre><code><span class="kw">interface</span> <span class="typ">RenderOptions</span> {
+  <span class="prop">templateId</span>: <span class="typ">string</span>;
+  <span class="prop">payload</span>?:   <span class="typ">Record</span>&lt;<span class="typ">string</span>, <span class="typ">any</span>&gt;;
+  <span class="prop">format</span>?:    <span class="str">'pdf'</span> | <span class="str">'png'</span>;
+  <span class="prop">quality</span>?:   <span class="str">'draft'</span> | <span class="str">'standard'</span> | <span class="str">'high'</span> | <span class="str">'ultra'</span>;
+  <span class="prop">side</span>?:      <span class="str">'front'</span> | <span class="str">'back'</span> | <span class="str">'both'</span>;
+}</code></pre>
+      </div>
+
+      <h3 id="types-bulk-h">BulkRenderOptions</h3>
+      <div class="code-block">
+        <div class="code-block-header"><span class="code-lang">TypeScript</span></div>
+        <pre><code><span class="kw">interface</span> <span class="typ">BulkRenderOptions</span> {
+  <span class="prop">templateId</span>:  <span class="typ">string</span>;
+  <span class="prop">rows</span>:        <span class="typ">Record</span>&lt;<span class="typ">string</span>, <span class="typ">any</span>&gt;[];
+  <span class="prop">format</span>?:     <span class="str">'pdf'</span> | <span class="str">'png'</span>;
+  <span class="prop">quality</span>?:    <span class="str">'draft'</span> | <span class="str">'standard'</span> | <span class="str">'high'</span> | <span class="str">'ultra'</span>;
+  <span class="prop">mode</span>?:       <span class="str">'merged'</span> | <span class="str">'zip'</span>;
+  <span class="prop">onProgress</span>?: (current: <span class="typ">number</span>, total: <span class="typ">number</span>, name: <span class="typ">string</span>) => <span class="typ">void</span>;
+}</code></pre>
+      </div>
+
+      <h3 id="types-preview-h">PreviewOptions</h3>
+      <div class="code-block">
+        <div class="code-block-header"><span class="code-lang">TypeScript</span></div>
+        <pre><code><span class="kw">interface</span> <span class="typ">PreviewOptions</span> {
+  <span class="prop">templateId</span>: <span class="typ">string</span>;
+  <span class="prop">container</span>:  <span class="typ">HTMLElement</span>;    <span class="cm">// Konva renders into this element</span>
+  <span class="prop">payload</span>?:   <span class="typ">Record</span>&lt;<span class="typ">string</span>, <span class="typ">any</span>&gt;;
+  <span class="prop">scale</span>?:     <span class="typ">number</span>;         <span class="cm">// Canvas scale (default: 1)</span>
+}</code></pre>
+      </div>
+
+      <h3 id="types-results-h">Result Types</h3>
+      <div class="code-block">
+        <div class="code-block-header"><span class="code-lang">TypeScript</span></div>
+        <pre><code><span class="kw">interface</span> <span class="typ">RenderResult</span> {
+  <span class="prop">blob</span>:     <span class="typ">Blob</span>;
+  <span class="prop">mimeType</span>: <span class="typ">string</span>;  <span class="cm">// 'application/pdf' | 'image/png'</span>
+  <span class="prop">sizeKB</span>:   <span class="typ">number</span>;
+}
+
+<span class="kw">interface</span> <span class="typ">BulkRenderResult</span> {
+  <span class="prop">blob</span>:     <span class="typ">Blob</span>;
+  <span class="prop">filename</span>: <span class="typ">string</span>;  <span class="cm">// e.g. 'BadgeTemplate_Export.pdf'</span>
+  <span class="prop">sizeKB</span>:   <span class="typ">number</span>;
+}</code></pre>
+      </div>
+    </section>
+
+    <!-- GUIDE: PAYLOAD -->
+    <section class="doc-section" id="guide-payload">
+      <h2>Guide: Building Payloads <a class="anchor" href="#guide-payload">#</a></h2>
+      <p>
+        Templates use <code>{{variableName}}</code> mustache syntax. The payload object you pass to <code>render()</code>, <code>preview()</code>, or each row in <code>renderBulk()</code> must contain keys matching those variable names.
+      </p>
+
+      <div class="callout note">
+        <span class="callout-icon">ℹ</span>
+        <p>Variable names are case-sensitive. <code>{{Name}}</code> and <code>{{name}}</code> are different variables.</p>
+      </div>
+
+      <h3>Image Variables</h3>
+      <p>Pass a publicly accessible URL for image layers. The SDK will preload the image before rendering to avoid async artifacts.</p>
+
+      <div class="code-block">
+        <div class="code-block-header"><span class="code-lang">TypeScript — payload with images</span><button class="copy-btn" onclick="copyBlock(this)">copy</button></div>
+        <pre><code><span class="kw">await</span> <span class="prop">sdk</span>.<span class="fn">render</span>({
+  <span class="prop">templateId</span>: <span class="str">'template_abc123'</span>,
+  <span class="prop">payload</span>: {
+    <span class="cm">// Text variables</span>
+    <span class="prop">name</span>:       <span class="str">'Rishabh Dev'</span>,
+    <span class="prop">title</span>:      <span class="str">'Senior Software Engineer'</span>,
+    <span class="prop">department</span>: <span class="str">'Platform Engineering'</span>,
+    <span class="prop">employee_id</span>:<span class="str">'EMP-4921'</span>,
+
+    <span class="cm">// Image variable — must be a public URL</span>
+    <span class="prop">photo</span>:      <span class="str">'https://cdn.example.com/avatars/rishabh.jpg'</span>,
+
+    <span class="cm">// QR code / barcode — pass the encoded data string</span>
+    <span class="prop">qr_data</span>:    <span class="str">'https://example.com/employee/4921'</span>,
+  },
+  <span class="prop">format</span>: <span class="str">'pdf'</span>,
+});</code></pre>
+      </div>
+
+      <h3>Missing Variables</h3>
+      <p>If a variable in the template is not present in the payload, it renders as an empty string. No error is thrown.</p>
+    </section>
+
+    <!-- GUIDE: BULK -->
+    <section class="doc-section" id="guide-bulk">
+      <h2>Guide: Bulk Rendering <a class="anchor" href="#guide-bulk">#</a></h2>
+      <p>
+        Bulk rendering loops over an array of row objects and renders each one against the same template. Use <code>mode: 'merged'</code> for a single PDF export, or <code>mode: 'zip'</code> for individual files.
+      </p>
+
+      <h3>Merged PDF (one PDF, multiple pages)</h3>
+      <div class="code-block">
+        <div class="code-block-header"><span class="code-lang">TypeScript</span><button class="copy-btn" onclick="copyBlock(this)">copy</button></div>
+        <pre><code><span class="kw">const</span> <span class="prop">result</span> = <span class="kw">await</span> <span class="prop">sdk</span>.<span class="fn">renderBulk</span>({
+  <span class="prop">templateId</span>: <span class="str">'template_abc123'</span>,
+  <span class="prop">rows</span>:    <span class="prop">employees</span>,
+  <span class="prop">format</span>:  <span class="str">'pdf'</span>,
+  <span class="prop">quality</span>: <span class="str">'high'</span>,
+  <span class="prop">mode</span>:    <span class="str">'merged'</span>,  <span class="cm">// → TemplateName_Export.pdf (N pages)</span>
+});</code></pre>
+      </div>
+
+      <h3>ZIP Archive (one file per record)</h3>
+      <div class="code-block">
+        <div class="code-block-header"><span class="code-lang">TypeScript</span><button class="copy-btn" onclick="copyBlock(this)">copy</button></div>
+        <pre><code><span class="kw">const</span> <span class="prop">result</span> = <span class="kw">await</span> <span class="prop">sdk</span>.<span class="fn">renderBulk</span>({
+  <span class="prop">templateId</span>: <span class="str">'template_abc123'</span>,
+  <span class="prop">rows</span>:    <span class="prop">employees</span>,
+  <span class="prop">format</span>:  <span class="str">'png'</span>,
+  <span class="prop">quality</span>: <span class="str">'standard'</span>,
+  <span class="prop">mode</span>:    <span class="str">'zip'</span>,      <span class="cm">// → TemplateName_Export.zip</span>
+                        <span class="cm">//   contains: Rishabh Dev_Front.png, etc.</span>
+  <span class="prop">onProgress</span>: (<span class="prop">cur</span>, <span class="prop">tot</span>, <span class="prop">name</span>) => {
+    <span class="prop">console</span>.<span class="fn">log</span>(<span class="str">`[${cur}/${tot}] Rendered: ${name}`</span>);
+  }
+});</code></pre>
+      </div>
+
+      <div class="callout warning">
+        <span class="callout-icon">⚠</span>
+        <p>Bulk rendering runs entirely in the browser. For very large batches (500+ records at <code>ultra</code> quality), consider chunking the operation to avoid tab crashes on lower-end devices. Use <code>'draft'</code> or <code>'standard'</code> quality for initial proofing.</p>
+      </div>
+    </section>
+
+    <!-- GUIDE: FRAMEWORK -->
+    <section class="doc-section" id="guide-framework">
+      <h2>Guide: Framework Integration <a class="anchor" href="#guide-framework">#</a></h2>
+
+      <div class="tab-group" data-tabs="fw-tabs">
+        <div class="tab-nav">
+          <button class="tab-btn active" onclick="switchTab(this,'fw-react')">React / Next.js</button>
+          <button class="tab-btn" onclick="switchTab(this,'fw-vue')">Vue 3</button>
+          <button class="tab-btn" onclick="switchTab(this,'fw-vanilla')">Vanilla JS</button>
+          <button class="tab-btn" onclick="switchTab(this,'fw-wp')">WordPress</button>
+        </div>
+
+        <div id="fw-react" class="tab-panel active">
+          <div class="code-block">
+            <div class="code-block-header"><span class="code-lang">React Hook</span><button class="copy-btn" onclick="copyBlock(this)">copy</button></div>
+            <pre><code><span class="cm">// hooks/use100Prints.ts</span>
+<span class="kw">import</span> { useMemo } <span class="kw">from</span> <span class="str">'react'</span>;
+<span class="kw">import</span> { <span class="typ">BrowserSDK</span> } <span class="kw">from</span> <span class="str">'@100prints/browser-sdk'</span>;
+
+<span class="kw">const</span> <span class="prop">_sdk</span> = <span class="kw">new</span> <span class="typ">BrowserSDK</span>({ <span class="prop">key</span>: <span class="prop">process</span>.<span class="prop">env</span>.<span class="prop">NEXT_PUBLIC_100PRINTS_KEY</span><span class="op">!</span> });
+
+<span class="kw">export function</span> <span class="fn">use100Prints</span>() {
+  <span class="kw">return</span> <span class="fn">useMemo</span>(() => <span class="prop">_sdk</span>, []);
+}
+
+<span class="cm">// Usage in a component:</span>
+<span class="kw">export function</span> <span class="fn">ExportButton</span>({ <span class="prop">id</span>, <span class="prop">data</span> }) {
+  <span class="kw">const</span> <span class="prop">sdk</span> = <span class="fn">use100Prints</span>();
+  <span class="kw">const</span> <span class="prop">handleExport</span> = <span class="kw">async</span> () => {
+    <span class="kw">const</span> { <span class="prop">blob</span>, <span class="prop">mimeType</span> } = <span class="kw">await</span> <span class="prop">sdk</span>.<span class="fn">render</span>({
+      <span class="prop">templateId</span>: <span class="prop">id</span>, <span class="prop">payload</span>: <span class="prop">data</span>, <span class="prop">format</span>: <span class="str">'pdf'</span>
+    });
+    <span class="kw">const</span> <span class="prop">url</span> = <span class="typ">URL</span>.<span class="fn">createObjectURL</span>(<span class="kw">new</span> <span class="typ">Blob</span>([<span class="prop">blob</span>], { <span class="prop">type</span>: <span class="prop">mimeType</span> }));
+    <span class="prop">window</span>.<span class="fn">open</span>(<span class="prop">url</span>, <span class="str">'_blank'</span>);
+  };
+  <span class="kw">return</span> <span class="tag">&lt;button</span> <span class="attr">onClick</span>=<span class="str">{handleExport}</span><span class="tag">&gt;</span>Export PDF<span class="tag">&lt;/button&gt;</span>;
+}</code></pre>
+          </div>
+        </div>
+
+        <div id="fw-vue" class="tab-panel">
+          <div class="code-block">
+            <div class="code-block-header"><span class="code-lang">Vue 3 Composable</span><button class="copy-btn" onclick="copyBlock(this)">copy</button></div>
+            <pre><code><span class="cm">// composables/use100Prints.ts</span>
+<span class="kw">import</span> { <span class="typ">BrowserSDK</span>, <span class="kw">type</span> <span class="typ">RenderOptions</span> } <span class="kw">from</span> <span class="str">'@100prints/browser-sdk'</span>;
+
+<span class="kw">const</span> <span class="prop">sdk</span> = <span class="kw">new</span> <span class="typ">BrowserSDK</span>({ <span class="prop">key</span>: <span class="kw">import</span>.<span class="prop">meta</span>.<span class="prop">env</span>.<span class="prop">VITE_100PRINTS_KEY</span> });
+
+<span class="kw">export function</span> <span class="fn">use100Prints</span>() {
+  <span class="kw">async function</span> <span class="fn">renderAndDownload</span>(<span class="prop">opts</span>: <span class="typ">RenderOptions</span>, <span class="prop">filename</span>: <span class="typ">string</span>) {
+    <span class="kw">const</span> { <span class="prop">blob</span> } = <span class="kw">await</span> <span class="prop">sdk</span>.<span class="fn">render</span>(<span class="prop">opts</span>);
+    <span class="kw">const</span> <span class="prop">a</span> = <span class="typ">document</span>.<span class="fn">createElement</span>(<span class="str">'a'</span>);
+    <span class="prop">a</span>.<span class="prop">href</span>     = <span class="typ">URL</span>.<span class="fn">createObjectURL</span>(<span class="prop">blob</span>);
+    <span class="prop">a</span>.<span class="prop">download</span> = <span class="prop">filename</span>;
+    <span class="prop">a</span>.<span class="fn">click</span>();
+  }
+  <span class="kw">return</span> { <span class="prop">sdk</span>, <span class="prop">renderAndDownload</span> };
+}</code></pre>
+          </div>
+        </div>
+
+        <div id="fw-vanilla" class="tab-panel">
+          <div class="code-block">
+            <div class="code-block-header"><span class="code-lang">Vanilla JS (ES Module)</span><button class="copy-btn" onclick="copyBlock(this)">copy</button></div>
+            <pre><code><span class="tag">&lt;script</span> <span class="attr">type</span>=<span class="str">"module"</span><span class="tag">&gt;</span>
+  <span class="kw">import</span> { <span class="typ">BrowserSDK</span> } <span class="kw">from</span>
+    <span class="str">'https://cdn.jsdelivr.net/npm/@100prints/browser-sdk/dist/100prints-sdk.es.js'</span>;
+
+  <span class="kw">const</span> <span class="prop">sdk</span> = <span class="kw">new</span> <span class="typ">BrowserSDK</span>({ <span class="prop">key</span>: <span class="str">'pk_live_...'</span> });
+
+  <span class="typ">document</span>.<span class="fn">getElementById</span>(<span class="str">'export-btn'</span>)
+    .<span class="fn">addEventListener</span>(<span class="str">'click'</span>, <span class="kw">async</span> () => {
+      <span class="kw">const</span> { <span class="prop">blob</span> } = <span class="kw">await</span> <span class="prop">sdk</span>.<span class="fn">render</span>({
+        <span class="prop">templateId</span>: <span class="str">'template_abc123'</span>,
+        <span class="prop">payload</span>:    { <span class="prop">name</span>: <span class="str">'Rishabh Dev'</span> },
+        <span class="prop">format</span>:     <span class="str">'pdf'</span>,
+      });
+      <span class="kw">const</span> <span class="prop">a</span> = <span class="typ">document</span>.<span class="fn">createElement</span>(<span class="str">'a'</span>);
+      <span class="prop">a</span>.<span class="prop">href</span>     = <span class="typ">URL</span>.<span class="fn">createObjectURL</span>(<span class="prop">blob</span>);
+      <span class="prop">a</span>.<span class="prop">download</span> = <span class="str">'badge.pdf'</span>;
+      <span class="prop">a</span>.<span class="fn">click</span>();
+    });
+<span class="tag">&lt;/script&gt;</span></code></pre>
+          </div>
+        </div>
+
+        <div id="fw-wp" class="tab-panel">
+          <div class="code-block">
+            <div class="code-block-header"><span class="code-lang">WordPress (PHP enqueue + inline JS)</span><button class="copy-btn" onclick="copyBlock(this)">copy</button></div>
+            <pre><code><span class="cm">// In your plugin or theme functions.php</span>
+<span class="kw">function</span> <span class="fn">enqueue_100prints_sdk</span>() {
+    <span class="fn">wp_enqueue_script</span>(
+        <span class="str">'100prints-sdk'</span>,
+        <span class="str">'https://cdn.jsdelivr.net/npm/@100prints/browser-sdk/dist/100prints-sdk.umd.js'</span>,
+        [],
+        <span class="str">'1.0.0'</span>,
+        <span class="kw">true</span>
+    );
+
+    <span class="fn">wp_add_inline_script</span>(<span class="str">'100prints-sdk'</span>, <span class="str">'
+        window.__100PrintsSDK = new BrowserSDK100Prints.BrowserSDK({
+            key: "'</span> . <span class="fn">get_option</span>(<span class="str">'my_plugin_sdk_key'</span>) . <span class="str">'"
+        });
+    '</span>);
+}
+<span class="fn">add_action</span>(<span class="str">'wp_enqueue_scripts'</span>, <span class="str">'enqueue_100prints_sdk'</span>);</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ERRORS -->
+    <section class="doc-section" id="errors">
+      <h2>Errors &amp; Status Codes <a class="anchor" href="#errors">#</a></h2>
+      <p>
+        The SDK throws a plain <code>Error</code> when the API returns a non-OK response. The error message contains the HTTP status and a description from the server.
+      </p>
+
+      <div class="code-block">
+        <div class="code-block-header"><span class="code-lang">TypeScript — error handling</span><button class="copy-btn" onclick="copyBlock(this)">copy</button></div>
+        <pre><code><span class="kw">try</span> {
+  <span class="kw">const</span> <span class="prop">result</span> = <span class="kw">await</span> <span class="prop">sdk</span>.<span class="fn">render</span>({ <span class="prop">templateId</span>: <span class="str">'...'</span>, <span class="prop">payload</span>: {} });
+} <span class="kw">catch</span> (<span class="prop">err</span>) {
+  <span class="kw">if</span> (<span class="prop">err</span> <span class="kw">instanceof</span> <span class="typ">Error</span>) {
+    <span class="prop">console</span>.<span class="fn">error</span>(<span class="prop">err</span>.<span class="prop">message</span>);
+    <span class="cm">// e.g. "API Error: 403 Forbidden — Template not accessible with this key"</span>
+  }
+}</code></pre>
+      </div>
+
+      <h3>Common Error Scenarios</h3>
+      <ul class="error-list">
+        <li class="err-auth">
+          <span class="error-code">401</span>
+          <span class="error-desc"><strong>Unauthorized</strong> — The API key is missing, invalid, or has been revoked. Verify <code>pk_live_...</code> key is correct.</span>
+        </li>
+        <li class="err-plan">
+          <span class="error-code">402</span>
+          <span class="error-desc"><strong>Payment Required</strong> — SDK access requires a Pro or Enterprise plan. Upgrade from the 100Prints dashboard.</span>
+        </li>
+        <li class="err-auth">
+          <span class="error-code">403</span>
+          <span class="error-desc"><strong>Forbidden</strong> — The key exists but does not have permission for the requested template. Check key permissions in the dashboard.</span>
+        </li>
+        <li class="err-tmpl">
+          <span class="error-code">404</span>
+          <span class="error-desc"><strong>Not Found</strong> — No template exists with the provided <code>templateId</code>. Check the ID in your 100Prints dashboard.</span>
+        </li>
+        <li class="err-rate">
+          <span class="error-code">429</span>
+          <span class="error-desc"><strong>Too Many Requests</strong> — Rate limit exceeded. The SDK API allows 5 requests per minute per key. Implement exponential backoff.</span>
+        </li>
+      </ul>
+
+      <div class="callout tip">
+        <span class="callout-icon">✓</span>
+        <p>For bulk rendering, only the initial template fetch counts against the rate limit. Subsequent rows re-use the cached template and render entirely in the browser.</p>
+      </div>
+    </section>
+
+    <!-- RATE LIMITS -->
+    <section class="doc-section" id="limits">
+      <h2>Rate Limits <a class="anchor" href="#limits">#</a></h2>
+      <p>Rate limits apply to the <code>/public/v1/sdk/render</code> API endpoint — which is called once per unique <code>templateId</code> to fetch template data. The rendering itself is fully client-side.</p>
+
+      <table class="api-table">
+        <thead><tr><th>Limit</th><th>Value</th><th>Scope</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Requests per minute</td>
+            <td class="param-type">5 req/min</td>
+            <td>Per publishable key</td>
+          </tr>
+          <tr>
+            <td>Template cache</td>
+            <td class="param-type">In-memory</td>
+            <td>SDK instance (cleared on <code>destroy()</code>)</td>
+          </tr>
+          <tr>
+            <td>Bulk rendering</td>
+            <td class="param-type">Unlimited</td>
+            <td>Client-side only, no API calls after template fetch</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>Create multiple SDK instances with different keys if you need higher throughput, or contact support for enterprise rate limit increases.</p>
+    </section>
+
+    <!-- CHANGELOG -->
+    <section class="doc-section" id="changelog">
+      <h2>Changelog <a class="anchor" href="#changelog">#</a></h2>
+
+      <h3>v1.0.0 — Initial Release</h3>
+      <ul style="color:var(--text-muted);font-size:0.85rem;line-height:2;padding-left:20px;">
+        <li><code>BrowserSDK.render()</code> — single-card PDF &amp; PNG export at 4 quality levels</li>
+        <li><code>BrowserSDK.preview()</code> — live Konva canvas preview in any DOM container</li>
+        <li><code>BrowserSDK.renderBulk()</code> — bulk rendering with merged PDF &amp; ZIP output modes</li>
+        <li>Full TypeScript support — ESM + UMD builds</li>
+        <li>Pixel-perfect font loading with custom font manifest support</li>
+        <li>QR codes, barcodes, SVG text, table-SVG, chart-SVG layer support</li>
+        <li>Publishable key authentication with template-scoped permissions</li>
+        <li>In-memory template cache to minimize API calls</li>
+        <li>Rate limiting: 5 req/min per key with clear error messages</li>
+      </ul>
+
+      <div id="doc-footer">
+        <span>© 2025 100Prints. All rights reserved.</span>
+        <span style="display:flex;align-items:center;gap:16px;">
+          <a href="https://100printswith.me" style="color:var(--text-dim)">Platform</a>
+          <a href="https://100printswith.me/dashboard" style="color:var(--text-dim)">Dashboard</a>
+          <a href="mailto:support@100printswith.me" style="color:var(--text-dim)">Support</a>
+        </span>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  /* ─── Sidebar active state ─────────────────────────────────────────── */
+  const sections = document.querySelectorAll('.doc-section');
+  const navLinks = document.querySelectorAll('.sidebar-link');
+  const headerH  = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-h'));
+
+  function updateActive() {
+    let current = '';
+    sections.forEach(s => {
+      const top = s.getBoundingClientRect().top;
+      if (top <= headerH + 40) current = s.id;
+    });
+    navLinks.forEach(l => {
+      const href = l.getAttribute('href')?.replace('#','');
+      l.classList.toggle('active', href === current);
+    });
+  }
+
+  window.addEventListener('scroll', updateActive, { passive: true });
+  updateActive();
+
+  /* ─── Tab switching ────────────────────────────────────────────────── */
+  function switchTab(btn, panelId) {
+    const nav   = btn.closest('.tab-nav');
+    const group = nav.closest('.tab-group');
+    nav.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    group.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(panelId).classList.add('active');
+  }
+
+  /* ─── Copy button ──────────────────────────────────────────────────── */
+  function copyText(btn, text) {
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
+  function copyBlock(btn) {
+    const block = btn.closest('.code-block');
+    const text  = block.querySelector('pre code').innerText;
+    copyText(btn, text);
+  }
+</script>
+</body>
+</html>
