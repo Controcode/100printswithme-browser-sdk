@@ -3,17 +3,14 @@
   "version": "1.0.0",
   "description": "Official Browser SDK for 100PrintsWithMe",
   "type": "module",
-
   "main": "./dist/100prints-sdk.umd.js",
   "module": "./dist/100prints-sdk.es.js",
   "types": "./dist/100prints-sdk.d.ts",
-
   "files": [
     "dist",
     "README.md",
     "LICENSE"
   ],
-
   "exports": {
     ".": {
       "types": "./dist/100prints-sdk.d.ts",
@@ -21,14 +18,13 @@
       "require": "./dist/100prints-sdk.umd.js"
     }
   },
-
   "scripts": {
     "dev": "vite",
     "build": "vite build && node scripts/postbuild.js",
     "test": "vitest run",
-    "watch": "vite build --watch"
+    "watch": "vite build --watch",
+    "prepublishOnly": "npm run build"
   },
-
   "devDependencies": {
     "@types/jsbarcode": "^3.11.4",
     "@types/pdfkit": "^0.17.6",
@@ -45,16 +41,12 @@
     "vite": "^6.2.0",
     "vite-plugin-dts": "^3.9.1"
   },
-
   "license": "MIT",
-
   "homepage": "https://github.com/Controcode/100printswithme-browser-sdk",
-
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Controcode/100printswithme-browser-sdk.git"
   },
-
   "bugs": {
     "url": "https://github.com/Controcode/100printswithme-browser-sdk/issues"
   }

@@ -4,7 +4,7 @@ Official Browser SDK for **100PrintsWithMe**.
 ### Test SDK with Your API Key Live  **https://playground.100printswith.me**
 Generate certificates, ID cards, event badges, invoices, reports, tickets, and other print-ready documents directly in the browser using templates created in the 100PrintsWithMe Dashboard.
 
-No backend rendering required.
+No backend rendering required .
 
 ---
 
