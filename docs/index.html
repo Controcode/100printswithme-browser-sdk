@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>100Prints Browser SDK — Documentation</title>
-  <meta name="description" content="Complete documentation for the 100Prints Browser SDK. Render templates, generate PDFs, export PNGs, and bulk-generate documents from any JavaScript application." />
+  <title>100PrintsWithMe Browser SDK — Documentation</title>
+  <meta name="description" content="Complete documentation for the 100PrintsWithMe Browser SDK. Render templates, generate PDFs, export PNGs, and bulk-generate documents from any JavaScript application." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -749,8 +749,8 @@
 
     <!-- OVERVIEW -->
     <section class="doc-section" id="overview">
-      <div class="hero-eyebrow">@100prints/browser-sdk</div>
-      <h1 class="hero-title">100Prints Browser SDK</h1>
+      <div class="hero-eyebrow">@100printswithme/browser-sdk</div>
+      <h1 class="hero-title">100PrintsWithMe Browser SDK</h1>
       <p class="hero-sub">
         Render, export, and bulk-generate 100Prints templates directly in the browser — as pixel-perfect PDFs or PNGs — using a publishable API key. No server required.
       </p>
@@ -795,20 +795,20 @@
 
       <div class="install-block">
         <span class="install-prefix">npm</span>
-        <span class="install-cmd">npm install @100prints/browser-sdk</span>
-        <button class="copy-btn" onclick="copyText(this,'npm install @100prints/browser-sdk')">copy</button>
+        <span class="install-cmd">npm install @100printswithme/browser-sdk</span>
+        <button class="copy-btn" onclick="copyText(this,'npm install @100printswithme/browser-sdk')">copy</button>
       </div>
 
       <div class="install-block">
         <span class="install-prefix">pnpm</span>
-        <span class="install-cmd">pnpm add @100prints/browser-sdk</span>
-        <button class="copy-btn" onclick="copyText(this,'pnpm add @100prints/browser-sdk')">copy</button>
+        <span class="install-cmd">pnpm add @100printswithme/browser-sdk</span>
+        <button class="copy-btn" onclick="copyText(this,'pnpm add @100printswithme/browser-sdk')">copy</button>
       </div>
 
       <div class="install-block">
         <span class="install-prefix">yarn</span>
-        <span class="install-cmd">yarn add @100prints/browser-sdk</span>
-        <button class="copy-btn" onclick="copyText(this,'yarn add @100prints/browser-sdk')">copy</button>
+        <span class="install-cmd">yarn add @100printswithme/browser-sdk</span>
+        <button class="copy-btn" onclick="copyText(this,'yarn add @100printswithme/browser-sdk')">copy</button>
       </div>
 
       <h3>CDN (UMD)</h3>
@@ -818,7 +818,7 @@
           <span class="code-lang">HTML</span>
           <button class="copy-btn" onclick="copyBlock(this)">copy</button>
         </div>
-        <pre><code><span class="tag">&lt;script</span> <span class="attr">src</span>=<span class="str">"https://cdn.jsdelivr.net/npm/@100prints/browser-sdk/dist/100prints-sdk.umd.js"</span><span class="tag">&gt;&lt;/script&gt;</span>
+        <pre><code><span class="tag">&lt;script</span> <span class="attr">src</span>=<span class="str">"https://cdn.jsdelivr.net/npm/@100printswithme/browser-sdk/dist/100prints-sdk.umd.js"</span><span class="tag">&gt;&lt;/script&gt;</span>
 <span class="tag">&lt;script&gt;</span>
   <span class="kw">const</span> <span class="prop">sdk</span> = <span class="kw">new</span> <span class="typ">BrowserSDK100Prints</span>.<span class="fn">BrowserSDK</span>({
     <span class="prop">key</span>: <span class="str">'pk_live_...'</span>
@@ -842,7 +842,7 @@
         <div id="qs-ts" class="tab-panel active">
           <div class="code-block">
             <div class="code-block-header"><span class="code-lang">TypeScript</span><button class="copy-btn" onclick="copyBlock(this)">copy</button></div>
-            <pre><code><span class="kw">import</span> { <span class="typ">BrowserSDK</span> } <span class="kw">from</span> <span class="str">'@100prints/browser-sdk'</span>;
+            <pre><code><span class="kw">import</span> { <span class="typ">BrowserSDK</span> } <span class="kw">from</span> <span class="str">'@100printswithme/browser-sdk'</span>;
 
 <span class="cm">// 1. Initialize once (use your publishable key — safe to expose)</span>
 <span class="kw">const</span> <span class="prop">sdk</span> = <span class="kw">new</span> <span class="typ">BrowserSDK</span>({
@@ -876,7 +876,7 @@
         <div id="qs-js" class="tab-panel">
           <div class="code-block">
             <div class="code-block-header"><span class="code-lang">JavaScript</span><button class="copy-btn" onclick="copyBlock(this)">copy</button></div>
-            <pre><code><span class="kw">import</span> { <span class="typ">BrowserSDK</span> } <span class="kw">from</span> <span class="str">'@100prints/browser-sdk'</span>;
+            <pre><code><span class="kw">import</span> { <span class="typ">BrowserSDK</span> } <span class="kw">from</span> <span class="str">'@100printswithme/browser-sdk'</span>;
 
 <span class="kw">const</span> <span class="prop">sdk</span> = <span class="kw">new</span> <span class="typ">BrowserSDK</span>({ <span class="prop">key</span>: <span class="str">'pk_live_...'</span> });
 
@@ -895,7 +895,7 @@
           <div class="code-block">
             <div class="code-block-header"><span class="code-lang">React</span><button class="copy-btn" onclick="copyBlock(this)">copy</button></div>
             <pre><code><span class="kw">import</span> { useRef, useCallback } <span class="kw">from</span> <span class="str">'react'</span>;
-<span class="kw">import</span> { <span class="typ">BrowserSDK</span> } <span class="kw">from</span> <span class="str">'@100prints/browser-sdk'</span>;
+<span class="kw">import</span> { <span class="typ">BrowserSDK</span> } <span class="kw">from</span> <span class="str">'@100printswithme/browser-sdk'</span>;
 
 <span class="cm">// Initialize once outside the component (stable across renders)</span>
 <span class="kw">const</span> <span class="prop">sdk</span> = <span class="kw">new</span> <span class="typ">BrowserSDK</span>({ <span class="prop">key</span>: <span class="str">'pk_live_...'</span> });
@@ -1014,7 +1014,7 @@
 
       <div class="code-block">
         <div class="code-block-header"><span class="code-lang">TypeScript</span><button class="copy-btn" onclick="copyBlock(this)">copy</button></div>
-        <pre><code><span class="kw">import</span> { <span class="typ">BrowserSDK</span> } <span class="kw">from</span> <span class="str">'@100prints/browser-sdk'</span>;
+        <pre><code><span class="kw">import</span> { <span class="typ">BrowserSDK</span> } <span class="kw">from</span> <span class="str">'@100printswithme/browser-sdk'</span>;
 
 <span class="kw">const</span> <span class="prop">sdk</span> = <span class="kw">new</span> <span class="typ">BrowserSDK</span>({
   <span class="prop">key</span>: <span class="str">'pk_live_xxxxxxxxxxxxxxxxxx'</span>,
@@ -1289,7 +1289,7 @@
       <div class="code-block">
         <div class="code-block-header"><span class="code-lang">React — cleanup in useEffect</span><button class="copy-btn" onclick="copyBlock(this)">copy</button></div>
         <pre><code><span class="kw">import</span> { useEffect, useRef } <span class="kw">from</span> <span class="str">'react'</span>;
-<span class="kw">import</span> { <span class="typ">BrowserSDK</span> } <span class="kw">from</span> <span class="str">'@100prints/browser-sdk'</span>;
+<span class="kw">import</span> { <span class="typ">BrowserSDK</span> } <span class="kw">from</span> <span class="str">'@100printswithme/browser-sdk'</span>;
 
 <span class="kw">export function</span> <span class="fn">MyComponent</span>() {
   <span class="kw">const</span> <span class="prop">sdkRef</span> = <span class="fn">useRef</span>&lt;<span class="typ">BrowserSDK</span>&gt;(<span class="kw">null</span>);
@@ -1307,7 +1307,7 @@
     <!-- TYPE REFERENCE -->
     <section class="doc-section" id="types-options">
       <h2>Type Reference <a class="anchor" href="#types-options">#</a></h2>
-      <p>All types are exported from <code>@100prints/browser-sdk</code> and available for import in TypeScript.</p>
+      <p>All types are exported from <code>@100printswithme/browser-sdk</code> and available for import in TypeScript.</p>
 
       <h3 id="types-options-h">BrowserSDKOptions</h3>
       <div class="code-block">
@@ -1469,7 +1469,7 @@
             <div class="code-block-header"><span class="code-lang">React Hook</span><button class="copy-btn" onclick="copyBlock(this)">copy</button></div>
             <pre><code><span class="cm">// hooks/use100Prints.ts</span>
 <span class="kw">import</span> { useMemo } <span class="kw">from</span> <span class="str">'react'</span>;
-<span class="kw">import</span> { <span class="typ">BrowserSDK</span> } <span class="kw">from</span> <span class="str">'@100prints/browser-sdk'</span>;
+<span class="kw">import</span> { <span class="typ">BrowserSDK</span> } <span class="kw">from</span> <span class="str">'@100printswithme/browser-sdk'</span>;
 
 <span class="kw">const</span> <span class="prop">_sdk</span> = <span class="kw">new</span> <span class="typ">BrowserSDK</span>({ <span class="prop">key</span>: <span class="prop">process</span>.<span class="prop">env</span>.<span class="prop">NEXT_PUBLIC_100PRINTS_KEY</span><span class="op">!</span> });
 
@@ -1496,7 +1496,7 @@
           <div class="code-block">
             <div class="code-block-header"><span class="code-lang">Vue 3 Composable</span><button class="copy-btn" onclick="copyBlock(this)">copy</button></div>
             <pre><code><span class="cm">// composables/use100Prints.ts</span>
-<span class="kw">import</span> { <span class="typ">BrowserSDK</span>, <span class="kw">type</span> <span class="typ">RenderOptions</span> } <span class="kw">from</span> <span class="str">'@100prints/browser-sdk'</span>;
+<span class="kw">import</span> { <span class="typ">BrowserSDK</span>, <span class="kw">type</span> <span class="typ">RenderOptions</span> } <span class="kw">from</span> <span class="str">'@100printswithme/browser-sdk'</span>;
 
 <span class="kw">const</span> <span class="prop">sdk</span> = <span class="kw">new</span> <span class="typ">BrowserSDK</span>({ <span class="prop">key</span>: <span class="kw">import</span>.<span class="prop">meta</span>.<span class="prop">env</span>.<span class="prop">VITE_100PRINTS_KEY</span> });
 
@@ -1518,7 +1518,7 @@
             <div class="code-block-header"><span class="code-lang">Vanilla JS (ES Module)</span><button class="copy-btn" onclick="copyBlock(this)">copy</button></div>
             <pre><code><span class="tag">&lt;script</span> <span class="attr">type</span>=<span class="str">"module"</span><span class="tag">&gt;</span>
   <span class="kw">import</span> { <span class="typ">BrowserSDK</span> } <span class="kw">from</span>
-    <span class="str">'https://cdn.jsdelivr.net/npm/@100prints/browser-sdk/dist/100prints-sdk.es.js'</span>;
+    <span class="str">'https://cdn.jsdelivr.net/npm/@100printswithme/browser-sdk/dist/100prints-sdk.es.js'</span>;
 
   <span class="kw">const</span> <span class="prop">sdk</span> = <span class="kw">new</span> <span class="typ">BrowserSDK</span>({ <span class="prop">key</span>: <span class="str">'pk_live_...'</span> });
 
@@ -1545,7 +1545,7 @@
 <span class="kw">function</span> <span class="fn">enqueue_100prints_sdk</span>() {
     <span class="fn">wp_enqueue_script</span>(
         <span class="str">'100prints-sdk'</span>,
-        <span class="str">'https://cdn.jsdelivr.net/npm/@100prints/browser-sdk/dist/100prints-sdk.umd.js'</span>,
+        <span class="str">'https://cdn.jsdelivr.net/npm/@100printswithme/browser-sdk/dist/100prints-sdk.umd.js'</span>,
         [],
         <span class="str">'1.0.0'</span>,
         <span class="kw">true</span>

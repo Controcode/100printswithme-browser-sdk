@@ -1,4 +1,4 @@
-# 100Prints Browser SDK — Implementation Plan (v3)
+# 100PrintsWithMe Browser SDK — Implementation Plan (v3)
 
 ## Problem Statement
 
@@ -27,7 +27,7 @@ Third-party developers need a JavaScript SDK to render 100Prints templates in th
 > 1. **Rate limit scaling** — Flat 5 req/min for all plans, or tiered (pro=5, enterprise=20)?
 > 2. **Max keys per user** — Should there be a cap (e.g., pro=10 keys, enterprise=50)?
 > 3. **Key management UI** — Out of scope for this plan, but where will it live? Dashboard? Developer page?
-> 4. **npm package name** — `@100prints/browser-sdk`, `@100printswithme/sdk`, or `100prints-sdk`?
+> 4. **npm package name** — `@100printswithme/browser-sdk`, `@100printswithme/sdk`, or `100prints-sdk`?
 
 ---
 
@@ -230,7 +230,7 @@ This limits per SDK key, not per IP. So a developer with 3 keys can make 15 req/
 ## 3. SDK Public API
 
 ```typescript
-import { BrowserSDK } from '@100prints/browser-sdk';
+import { BrowserSDK } from '@100printswithme/browser-sdk';
 
 const sdk = new BrowserSDK({
   key: 'pk_live_xxxxxxxxx',                          // publishable key

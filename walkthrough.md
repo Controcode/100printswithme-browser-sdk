@@ -1,4 +1,4 @@
-# Walkthrough — 100Prints Browser SDK & API Keys Integration
+# Walkthrough — 100PrintsWithMe Browser SDK & API Keys Integration
 
 I have successfully completed the implementation of the Standalone Browser SDK and generic API Keys system without modifying the existing React frontend application. 
 
