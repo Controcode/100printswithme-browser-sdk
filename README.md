@@ -157,17 +157,6 @@ Modern browsers supporting:
 
 ---
 
-## Roadmap
-
-- WordPress Plugin
-- React Components
-- Vue Components
-- Shopify App
-- Flutter SDK
-- Node SDK
-
----
-
 ## License
 
 Copyright (c) 2026 100PrintsWithMe.
