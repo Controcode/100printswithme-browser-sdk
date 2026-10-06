@@ -168,8 +168,7 @@ function renderBarChart(cd: ChartData, W: number, H: number, horizontal: boolean
   const barRatio = cd.barWidth ?? 0.6;
   const radius = cd.barRadius ?? 4;
   const color = cd.series[0]?.color || cd.colors[0] || '#4F86F7';
-  const rawFont = cd.fontFamily || 'Inter';
-  const font = rawFont.split(',')[0].trim().replace(/['"]/g, '');
+  const font = cd.fontFamily || 'Inter, Arial, sans-serif';
   const labelClr = cd.labelColor || '#64748b';
   const fs = cd.fontSize || 11;
 
@@ -257,8 +256,7 @@ function renderGroupedBar(cd: ChartData, W: number, H: number, horizontal: boole
   const n = cats.length;
   const numSeries = cd.series.length;
   const radius = cd.barRadius ?? 3;
-  const rawFont = cd.fontFamily || 'Inter';
-  const font = rawFont.split(',')[0].trim().replace(/['"]/g, '');
+  const font = cd.fontFamily || 'Inter, Arial, sans-serif';
   const labelClr = cd.labelColor || '#64748b';
   const fs = cd.fontSize || 11;
 
@@ -349,8 +347,7 @@ function renderStackedBar(cd: ChartData, W: number, H: number, horizontal: boole
   const cats = cd.categories;
   const n = cats.length;
   const radius = cd.barRadius ?? 0;
-  const rawFont = cd.fontFamily || 'Inter';
-  const font = rawFont.split(',')[0].trim().replace(/['"]/g, '');
+  const font = cd.fontFamily || 'Inter, Arial, sans-serif';
   const labelClr = cd.labelColor || '#64748b';
   const fs = cd.fontSize || 11;
   const barRatio = cd.barWidth ?? 0.6;
@@ -429,8 +426,7 @@ function renderLineChart(cd: ChartData, W: number, H: number, resolver?: (t: str
   const plotH = H - PAD.top - PAD.bottom;
   const cats = cd.categories;
   const n = cats.length;
-  const rawFont = cd.fontFamily || 'Inter';
-  const font = rawFont.split(',')[0].trim().replace(/['"]/g, '');
+  const font = cd.fontFamily || 'Inter, Arial, sans-serif';
   const labelClr = cd.labelColor || '#64748b';
   const fs = cd.fontSize || 11;
   const lw = cd.lineWidth ?? 2.5;
@@ -535,8 +531,7 @@ function renderPieDonut(cd: ChartData, W: number, H: number, isDonut: boolean, r
   const vals = (cd.series[0]?.values || []).map(v => toNum(v, resolver));
   const total = vals.reduce((a, b) => a + b, 0) || 1;
   const cats = cd.categories;
-  const rawFont = cd.fontFamily || 'Inter';
-  const font = rawFont.split(',')[0].trim().replace(/['"]/g, '');
+  const font = cd.fontFamily || 'Inter, Arial, sans-serif';
   const labelClr = cd.labelColor || '#64748b';
   const fs = cd.fontSize || 11;
 
@@ -599,8 +594,7 @@ function renderProgressRing(cd: ChartData, W: number, H: number, resolver?: (t: 
   const pct = Math.min(100, Math.max(0, toNum(cd.percentage || '0', resolver)));
   const trackColor = cd.trackColor || '#e2e8f0';
   const fillColor = cd.fillColor || '#4F86F7';
-  const rawFont = cd.fontFamily || 'Inter';
-  const font = rawFont.split(',')[0].trim().replace(/['"]/g, '');
+  const font = cd.fontFamily || 'Inter, Arial, sans-serif';
   const linecap = cd.roundedEnds ? 'round' : 'butt';
 
   // Track
@@ -633,8 +627,7 @@ function renderRadialProgress(cd: ChartData, W: number, H: number, resolver?: (t
   const pct = Math.min(100, Math.max(0, toNum(cd.percentage || '0', resolver)));
   const trackColor = cd.trackColor || '#e2e8f0';
   const fillColor = cd.fillColor || '#4F86F7';
-  const rawFont = cd.fontFamily || 'Inter';
-  const font = rawFont.split(',')[0].trim().replace(/['"]/g, '');
+  const font = cd.fontFamily || 'Inter, Arial, sans-serif';
   const linecap = cd.roundedEnds ? 'round' : 'butt';
 
   // Track arc (180°)
@@ -668,8 +661,7 @@ function renderProgressBarChart(cd: ChartData, W: number, H: number, resolver?: 
   const pct = Math.min(100, Math.max(0, toNum(cd.percentage || '0', resolver)));
   const trackColor = cd.trackColor || '#e2e8f0';
   const fillColor = cd.fillColor || '#4F86F7';
-  const rawFont = cd.fontFamily || 'Inter';
-  const font = rawFont.split(',')[0].trim().replace(/['"]/g, '');
+  const font = cd.fontFamily || 'Inter, Arial, sans-serif';
   const rx = cd.roundedEnds ? sw / 2 : 4;
 
   // Track
@@ -702,8 +694,7 @@ function renderProgressDial(cd: ChartData, W: number, H: number, resolver?: (t: 
   const pct = Math.min(100, Math.max(0, toNum(cd.percentage || '0', resolver)));
   const trackColor = cd.trackColor || '#e2e8f0';
   const fillColor = cd.fillColor || '#4F86F7';
-  const rawFont = cd.fontFamily || 'Inter';
-  const font = rawFont.split(',')[0].trim().replace(/['"]/g, '');
+  const font = cd.fontFamily || 'Inter, Arial, sans-serif';
   const linecap = cd.roundedEnds ? 'round' : 'butt';
 
   // Sweep: 180° arc (from 270° to 450°) - perfect semi-circle over the top

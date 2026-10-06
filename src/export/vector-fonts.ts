@@ -1,0 +1,77 @@
+import { getUsWeightClass, instanceFontAtWeight } from './font-instancer';
+
+export interface VectorFontManifestItem {
+  family: string;
+  weight: number;
+  url?: string;
+}
+
+const cache = new Map<string, ArrayBuffer>();
+const preparedCache = new Map<string, { buffer: ArrayBuffer; instanced: boolean }>();
+const webFontUrls = new Map<string, Promise<string | null>>();
+
+async function resolveWebFontUrl(family: string, weight: string | number, style: string): Promise<string | null> {
+  const cleanFamily = family.split(',')[0].trim().replace(/^['"]|['"]$/g, '');
+  if (!cleanFamily || /^(arial|helvetica|times|times new roman|courier|courier new|serif|sans-serif|monospace)$/i.test(cleanFamily)) return null;
+  const numericWeight = Number(weight) || (String(weight).toLowerCase() === 'bold' ? 700 : 400);
+  const key = `${cleanFamily}::${numericWeight}::${style}`;
+  let request = webFontUrls.get(key);
+  if (!request) {
+    request = (async () => {
+      try {
+        const familyQuery = encodeURIComponent(cleanFamily).replace(/%20/g, '+');
+        const axis = style === 'italic' ? `ital,wght@1,${numericWeight}` : `wght@${numericWeight}`;
+        const response = await fetch(`https://fonts.googleapis.com/css2?family=${familyQuery}:${axis}&display=swap`, { mode: 'cors' });
+        if (!response.ok) return null;
+        const css = await response.text();
+        const urls = [...css.matchAll(/url\(([^)]+)\)\s*format\(['"]?(?:woff2|truetype|opentype)/gi)];
+        return urls.length ? urls[urls.length - 1][1].replace(/^['"]|['"]$/g, '') : null;
+      } catch {
+        return null;
+      }
+    })();
+    webFontUrls.set(key, request);
+  }
+  return request;
+}
+
+export async function fetchFontBuffer(
+  family: string,
+  weight: string | number,
+  style: string,
+  fontUrl?: string | null,
+  options?: { instanceVariableFonts?: boolean },
+): Promise<{ buffer: ArrayBuffer; embedKey: string; syntheticOblique: boolean; syntheticBold: boolean } | null> {
+  const sourceUrl = fontUrl || await resolveWebFontUrl(family, weight, style);
+  if (!sourceUrl) return null;
+  let buffer = cache.get(sourceUrl);
+  if (!buffer) {
+    const response = await fetch(sourceUrl, { mode: 'cors' });
+    if (!response.ok) return null;
+    buffer = await response.arrayBuffer();
+    // PDFKit's fontkit accepts WOFF2 directly. Keep its table structure intact.
+    cache.set(sourceUrl, buffer);
+  }
+  const numericWeight = Number(weight) || (String(weight).toLowerCase() === 'bold' ? 700 : 400);
+  const embedKey = `${sourceUrl}::${numericWeight}::${options?.instanceVariableFonts ? 'pin' : 'raw'}`;
+  let preparedEntry = preparedCache.get(embedKey);
+  if (!preparedEntry) {
+    const pinned = options?.instanceVariableFonts ? await instanceFontAtWeight(buffer, numericWeight) : null;
+    preparedEntry = { buffer: pinned || buffer, instanced: !!pinned };
+    preparedCache.set(embedKey, preparedEntry);
+  }
+  const { buffer: prepared, instanced } = preparedEntry;
+  const actualWeight = getUsWeightClass(prepared);
+  // A regular static face may need browser-like synthetic bold and italic.
+  return {
+    buffer: prepared.slice(0), embedKey,
+    syntheticOblique: style === 'italic' && !/italic|oblique|ital,wght@1/i.test(sourceUrl),
+    syntheticBold: numericWeight >= 600 && !instanced && actualWeight !== null && actualWeight < 600,
+  };
+}
+
+export function clearFontCache(): void {
+  cache.clear();
+  preparedCache.clear();
+  webFontUrls.clear();
+}

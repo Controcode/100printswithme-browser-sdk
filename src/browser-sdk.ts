@@ -128,7 +128,7 @@ export class BrowserSDK {
     await scanAndLoadTemplateFonts(template, this.fontLoader, response.fontManifest);
     
     const engine = new RenderEngine();
-    return engine.renderSingle(template, options);
+    return engine.renderSingle(template, options, response.fontManifest);
   }
 
   async renderBulk(options: BulkRenderOptions): Promise<BulkRenderResult> {
@@ -138,7 +138,7 @@ export class BrowserSDK {
     await scanAndLoadTemplateFonts(template, this.fontLoader, response.fontManifest);
 
     const renderer = new BulkRenderer();
-    return renderer.renderBulk(template, options);
+    return renderer.renderBulk(template, options, response.fontManifest);
   }
 
   async preview(options: PreviewOptions): Promise<HTMLCanvasElement> {

@@ -22,6 +22,7 @@
     "dev": "vite",
     "build": "vite build && node scripts/postbuild.js",
     "test": "vitest run",
+    "test:browser": "node scripts/browser-smoke.mjs",
     "watch": "vite build --watch",
     "prepublishOnly": "npm run build"
   },
@@ -36,10 +37,12 @@
     "jspdf": "^4.0.0",
     "jszip": "^3.10.1",
     "konva": "^9.3.22",
+    "playwright-core": "^1.55.0",
     "qrcode": "^1.5.4",
     "typescript": "^5.8.2",
     "vite": "^6.2.0",
-    "vite-plugin-dts": "^3.9.1"
+    "vite-plugin-dts": "^3.9.1",
+    "vitest": "^3.2.4"
   },
   "license": "MIT",
   "homepage": "https://github.com/Controcode/100printswithme-browser-sdk",
@@ -49,5 +52,9 @@
   },
   "bugs": {
     "url": "https://github.com/Controcode/100printswithme-browser-sdk/issues"
+  },
+  "dependencies": {
+    "pdfkit": "^0.19.1",
+    "svg-to-pdfkit": "^0.1.8"
   }
 }

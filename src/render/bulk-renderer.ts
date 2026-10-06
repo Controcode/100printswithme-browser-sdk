@@ -3,6 +3,8 @@ import { BulkRenderOptions, BulkRenderResult, DocumentTemplate } from '../types'
 import { renderSingleRecord, preloadTemplateImages } from './render-engine';
 import { createJsPDFInstance, addDataUrlToJsPDF } from '../export/pdf-exporter';
 import { dataUrlToBlob } from '../export/png-exporter';
+import { renderVectorPdf } from '../export/vector-pdf-renderer';
+import type { VectorFontManifestItem } from '../export/vector-fonts';
 
 const SCALE_MAP: Record<string, number> = {
   draft: 1,     // 72 DPI
@@ -12,7 +14,7 @@ const SCALE_MAP: Record<string, number> = {
 };
 
 export class BulkRenderer {
-  async renderBulk(template: DocumentTemplate, options: BulkRenderOptions): Promise<BulkRenderResult> {
+  async renderBulk(template: DocumentTemplate, options: BulkRenderOptions, fontManifest: VectorFontManifestItem[] = []): Promise<BulkRenderResult> {
     const rows = options.rows;
     const totalRecords = rows.length;
     const format = options.format || 'pdf';
@@ -27,6 +29,39 @@ export class BulkRenderer {
     const hPt = canvasH * 0.75;
     const pdfOrientation = wPt > hPt ? 'l' : 'p';
     const templateName = template.name || '100Prints';
+
+    if (format === 'vector-pdf') {
+      const allLayers = [...(template.frontLayers || []), ...(template.backLayers || [])];
+      if (mode === 'merged') {
+        const pages: Array<{ layers: DocumentTemplate['frontLayers']; rowData: Record<string, any>; assetMap: Record<string, string | HTMLImageElement | ImageBitmap> }> = [];
+        for (let i = 0; i < rows.length; i++) {
+          const assetMap = await preloadTemplateImages(allLayers, rows[i]);
+          pages.push({ layers: template.frontLayers || [], rowData: rows[i], assetMap });
+          if (template.backLayers?.length) pages.push({ layers: template.backLayers, rowData: rows[i], assetMap });
+          onProgress?.(i + 1, rows.length, String(rows[i].Name || rows[i].name || `Record_${i + 1}`));
+        }
+        const blob = await renderVectorPdf(template, pages, scale, fontManifest);
+        return { blob, filename: `${templateName}_Export.pdf`, sizeKB: Math.round(blob.size / 1024) };
+      }
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+      const usedNames = new Map<string, number>();
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const assetMap = await preloadTemplateImages(allLayers, row);
+        const pages = [{ layers: template.frontLayers || [], rowData: row, assetMap }];
+        if (template.backLayers?.length) pages.push({ layers: template.backLayers, rowData: row, assetMap });
+        const blob = await renderVectorPdf(template, pages, scale, fontManifest);
+        const rawName = String(row.Name || row.name || `Record_${i + 1}`).replace(/[^\w\d\-_ ]/g, '_').trim();
+        const count = usedNames.get(rawName) || 0;
+        usedNames.set(rawName, count + 1);
+        const recordName = count === 0 ? rawName : `${rawName} (${count})`;
+        zip.file(`${recordName}.pdf`, blob);
+        onProgress?.(i + 1, rows.length, recordName);
+      }
+      const blob = await zip.generateAsync({ type: 'blob', compression: 'STORE', streamFiles: true });
+      return { blob, filename: `${templateName}_Export.zip`, sizeKB: Math.round(blob.size / 1024) };
+    }
 
     // Create hidden container for headless Konva
     const container = document.createElement('div');

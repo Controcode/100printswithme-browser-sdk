@@ -1,5 +1,5 @@
 // --- App & Editor Core Types ---
-export type LayerType = 'text' | 'image' | 'shape' | 'qr' | 'background' | 'barcode' | 'line' | 'frame' | 'textsvg' | 'table-svg' | 'chart-svg';
+export type LayerType = 'text' | 'image' | 'shape' | 'qr' | 'verification_id' | 'background' | 'barcode' | 'line' | 'frame' | 'textsvg' | 'table-svg' | 'chart-svg';
 export type DocType = 'id-card' | 'certificate';
 export type AppStep = 'landing' | 'setup' | 'editor' | 'finalize' | 'feedback';
 export type ColumnType = 'text' | 'image' | 'qr' | 'date';
@@ -177,6 +177,9 @@ export interface Layer {
   color?: string;
   fontFamily?: string;
   fontUrl?: string | null;
+  smartSizing?: boolean;
+  minFontSize?: number;
+  textFitPadding?: number;
   textAlign?: 'left' | 'center' | 'right';
   backgroundColor?: string;
   barcodeValue?: string;

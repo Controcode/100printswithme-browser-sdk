@@ -18,6 +18,7 @@ export default defineConfig({
       }
     },
     target: 'es2020',
+    assetsInlineLimit: 600000,
     minify: 'esbuild',
     sourcemap: true,
   },

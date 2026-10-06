@@ -1,11 +1,20 @@
 // shared/textSvgGenerator.ts
 import { Layer } from '../types';
+import { fitBrowserTextSize } from '../render/smart-text-sizing';
 
 // Helper to generate the specific SVG 'd' string based on the path type
 const generatePathString = (type: string, w: number, h: number, curvature: number, fontSize: number): { d: string, trueHeight: number, yOffset: number } => {
   const c = curvature / 100; // Normalized -1 to 1 
   const arcMidY = h / 2;
-  const padding = fontSize * 1.5; // Safe padding for all paths
+  // Keep the baseline and the visible bend inside the editable layer. The old
+  // width-based arcs put a 200px-wide curve far outside a 40px-high text box.
+  const top = Math.min(h / 2, fontSize * 0.85);
+  // A textPath positions the glyph baseline on the curve. Descenders and
+  // rotated letters extend well below it, especially at the trough of a
+  // downward arc. Keep that ink inside the SVG's own viewport even when the
+  // layer has a CSS drop-shadow filter.
+  const bottom = Math.max(top, h - fontSize * 0.55);
+  const bend = Math.max(0, bottom - top);
 
   let d = '';
   let trueHeight = fontSize;
@@ -21,43 +30,39 @@ const generatePathString = (type: string, w: number, h: number, curvature: numbe
 
     case 'arc-up': 
       {
-        const intensity = w / 2;
-        trueHeight = fontSize + intensity;
-        yOffset = arcMidY + (intensity / 2);
-        d = `M 0,${yOffset} Q ${w / 2},${yOffset - intensity * 2} ${w},${yOffset}`;
+        trueHeight = fontSize + bend;
+        yOffset = bottom;
+        d = `M 0,${bottom} Q ${w / 2},${2 * top - bottom} ${w},${bottom}`;
       }
       break;
 
     case 'arc-down': 
       {
-        const intensity = w / 2;
-        trueHeight = fontSize + intensity;
-        yOffset = arcMidY - (intensity / 2);
-        d = `M 0,${yOffset} Q ${w / 2},${yOffset + intensity * 2} ${w},${yOffset}`;
+        trueHeight = fontSize + bend;
+        yOffset = top;
+        d = `M 0,${top} Q ${w / 2},${2 * bottom - top} ${w},${top}`;
       }
       break;
 
     case 'circle-upper': 
       {
-        const r = w / 2;
-        trueHeight = r + fontSize;
-        yOffset = arcMidY + (r / 2);
-        d = `M 0,${yOffset} A ${r},${r} 0 0,1 ${w},${yOffset}`;
+        trueHeight = bend + fontSize;
+        yOffset = bottom;
+        d = `M 0,${bottom} A ${w / 2},${Math.max(1, bend)} 0 0,1 ${w},${bottom}`;
       }
       break;
 
     case 'circle-lower': 
       {
-        const r = w / 2;
-        trueHeight = r + fontSize;
-        yOffset = arcMidY - (r / 2);
-        d = `M 0,${yOffset} A ${r},${r} 0 0,0 ${w},${yOffset}`;
+        trueHeight = bend + fontSize;
+        yOffset = top;
+        d = `M 0,${top} A ${w / 2},${Math.max(1, bend)} 0 0,0 ${w},${top}`;
       }
       break;
 
     case 'full-circle': 
       {
-        const r = Math.min(w, h) / 2 - padding;
+        const r = Math.max(1, Math.min(w, h) / 2 - Math.min(fontSize * 0.55, Math.min(w, h) * 0.2));
         trueHeight = r * 2 + fontSize;
         yOffset = arcMidY;
         d = `M ${w/2 - r},${yOffset} A ${r},${r} 0 1,1 ${w/2 + r},${yOffset} A ${r},${r} 0 1,1 ${w/2 - r},${yOffset}`;
@@ -66,19 +71,19 @@ const generatePathString = (type: string, w: number, h: number, curvature: numbe
 
     case 'wave': 
       {
-        const amplitude = h / 3;
+        const amplitude = bend / 2;
         trueHeight = (amplitude * 2) + fontSize;
         yOffset = arcMidY;
-        d = `M 0,${yOffset} C ${w * 0.25},${yOffset - amplitude * 2} ${w * 0.75},${yOffset + amplitude * 2} ${w},${yOffset}`;
+        d = `M 0,${yOffset} C ${w * 0.25},${Math.max(top, yOffset - amplitude * 2)} ${w * 0.75},${Math.min(bottom, yOffset + amplitude * 2)} ${w},${yOffset}`;
       }
       break;
 
     case 's-curve': 
       {
-        const intensity = h / 2;
-        trueHeight = intensity * 2 + fontSize;
+        const intensity = bend;
+        trueHeight = intensity + fontSize;
         yOffset = arcMidY;
-        d = `M 0,${yOffset + intensity} C ${w/3},${yOffset - intensity} ${(w/3)*2},${yOffset + intensity*2} ${w},${yOffset - intensity}`;
+        d = `M 0,${bottom} C ${w/3},${top} ${(w/3)*2},${bottom} ${w},${top}`;
       }
       break;
 
@@ -86,32 +91,31 @@ const generatePathString = (type: string, w: number, h: number, curvature: numbe
       {
         trueHeight = h;
         yOffset = arcMidY;
-        d = `M 0,${h - padding} L ${w},${padding}`;
+        d = `M 0,${bottom} L ${w},${top}`;
       }
       break;
 
     case 'parabola':
       {
-        const dip = h / 2 - padding;
+        const dip = bend;
         trueHeight = dip + fontSize;
-        yOffset = padding;
-        d = `M 0,${yOffset} Q ${w/2},${h} ${w},${yOffset}`;
+        yOffset = top;
+        d = `M 0,${top} Q ${w/2},${2 * bottom - top} ${w},${top}`;
       }
       break;
 
     case 'dynamic-arc':
     default:
       {
-        const intensity = Math.abs(c) * (w / 1.5);
+        const intensity = Math.abs(c) * bend;
         trueHeight = fontSize + intensity;
-        yOffset = arcMidY - trueHeight / 2 + fontSize;
+        yOffset = arcMidY;
         if (c === 0) {
-          d = `M 0,${yOffset} L ${w},${yOffset}`;
+          d = `M 0,${arcMidY} L ${w},${arcMidY}`;
         } else if (c > 0) {
-          d = `M 0,${yOffset} Q ${w / 2},${yOffset + intensity * 2} ${w},${yOffset}`;
+          d = `M 0,${top} Q ${w / 2},${top + intensity * 2} ${w},${top}`;
         } else {
-          const startY = yOffset + intensity;
-          d = `M 0,${startY} Q ${w / 2},${startY - intensity * 2} ${w},${startY}`;
+          d = `M 0,${bottom} Q ${w / 2},${bottom - intensity * 2} ${w},${bottom}`;
         }
       }
       break;
@@ -121,7 +125,7 @@ const generatePathString = (type: string, w: number, h: number, curvature: numbe
 };
 
 export const generateTextSvgString = (layer: Layer, textStr: string, w: number, h: number): string => {
-  const fontSize = layer.fontSize || 24;
+  const fontSize = layer.smartSizing ? fitBrowserTextSize(layer, textStr, w, h) : layer.fontSize || 24;
   const offset = layer.pathOffset ?? 50; 
 
   const { d } = generatePathString(layer.pathType || 'dynamic-arc', w, h, layer.curvature || 0, fontSize);
@@ -152,7 +156,6 @@ export const generateTextSvgString = (layer: Layer, textStr: string, w: number, 
   const isBold = layer.fontWeight?.toString() === 'bold' || Number(layer.fontWeight) > 600;
   const isItalic = layer.fontStyle === 'italic';
   const fontFamily = layer.fontFamily || 'Inter';
-  const cleanFontFamily = fontFamily.split(',')[0].trim().replace(/['"]/g, '');
 
   // 🚨 THE FIX: 
   // 1. text-anchor="middle" is moved to the <text> tag
@@ -166,7 +169,7 @@ export const generateTextSvgString = (layer: Layer, textStr: string, w: number, 
         text-anchor="middle"
         dominant-baseline="middle"
         style="
-          font-family: '${cleanFontFamily}', sans-serif;
+          font-family: '${fontFamily}', sans-serif;
           font-size: ${fontSize}px;
           font-weight: ${isBold ? 'bold' : 'normal'};
           font-style: ${isItalic ? 'italic' : 'normal'};
@@ -175,7 +178,7 @@ export const generateTextSvgString = (layer: Layer, textStr: string, w: number, 
         "
       >
         <textPath href="#path-${layer.id}" startOffset="${offset}%">
-          ${textStr}
+          ${textStr.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}
         </textPath>
       </text>
     </svg>

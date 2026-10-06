@@ -44,3 +44,16 @@ export function applyCommonProps(node: Konva.Shape, layer: Layer, innerW: number
   node.shadowOffsetX(layer.shadowOffsetX || 0);
   node.shadowOffsetY(layer.shadowOffsetY || 0);
 }
+
+// CSS border-box coordinates used by the editor and frontend export.
+export function getBorderBox(layer: Layer, w: number, h: number) {
+  const borderWidth = layer.borderWidth || 0;
+  return {
+    borderWidth,
+    width: Math.max(1, w - borderWidth),
+    height: Math.max(1, h - borderWidth),
+    cornerRadius: layer.type === 'frame'
+      ? 9999
+      : Math.max(0, (layer.borderRadius || 0) - borderWidth / 2),
+  };
+}

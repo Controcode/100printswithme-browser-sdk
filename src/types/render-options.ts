@@ -1,7 +1,7 @@
 export interface RenderOptions {
   templateId: string;
   payload?: Record<string, any>;
-  format?: 'pdf' | 'png';
+  format?: 'pdf' | 'png' | 'vector-pdf';
   quality?: 'draft' | 'standard' | 'high' | 'ultra';
   side?: 'front' | 'back' | 'both';
 }
@@ -15,7 +15,7 @@ export interface RenderResult {
 export interface BulkRenderOptions {
   templateId: string;
   rows: Record<string, any>[];
-  format?: 'pdf' | 'png';
+  format?: 'pdf' | 'png' | 'vector-pdf';
   quality?: 'draft' | 'standard' | 'high' | 'ultra';
   mode?: 'merged' | 'zip';
   onProgress?: (current: number, total: number, recordName: string) => void;

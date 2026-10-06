@@ -58,6 +58,12 @@ const { blob } = await sdk.render({
 
 ---
 
+## Vector PDF
+
+Use `format: "vector-pdf"` with `render()` or `renderBulk()` to create a PDF with selectable text and vector shapes. Images, QR codes, barcodes, and shadows are embedded as raster resources where needed. The existing `"pdf"` format remains the flattened raster PDF.
+
+---
+
 ## Live Preview
 
 ```ts

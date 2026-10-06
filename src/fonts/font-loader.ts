@@ -153,27 +153,22 @@ export class FontLoader {
         const fileHandle = await opfs.getFileHandle(cacheKey);
         const file = await fileHandle.getFile();
         const buffer = await file.arrayBuffer();
-        return { buffer, format: detectFontFormat(buffer) };
+        const format = detectFontFormat(buffer);
+        if (format !== 'unknown') return { buffer, format };
       } catch {}
     } else if (memoryFallbackCache.has(cacheKey)) {
       const buffer = memoryFallbackCache.get(cacheKey)!;
-      return { buffer, format: detectFontFormat(buffer) };
+      const format = detectFontFormat(buffer);
+      if (format !== 'unknown') return { buffer, format };
     }
 
     try {
       const response = await fetch(url, { mode: 'cors' });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      let buffer = await response.arrayBuffer();
+      const buffer = await response.arrayBuffer();
 
-      const format = detectFontFormat(buffer);
-      if (format === 'woff2') {
-        try {
-          buffer = await decompressWoff2(buffer);
-        } catch (err) {
-          console.error(`Failed to decompress WOFF2 for ${fontFamily}:`, err);
-          return null;
-        }
-      }
+      // FontFace accepts WOFF2 bytes directly. Brotli decoding only the WOFF2
+      // payload loses its font table directory and makes the face invalid.
 
       if (opfs) {
         try {

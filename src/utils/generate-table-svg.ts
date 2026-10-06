@@ -110,11 +110,10 @@ export function generateTableSvg(layer: Layer, resolver?: (text: string) => stri
       const clipId = `clip-${layer.id}-${r}-${c}`;
       svg += `<clipPath id="${clipId}"><rect x="${cx}" y="${cy}" width="${cw}" height="${ch}" /></clipPath>`;
 
-      const cleanFontFamily = (cell.fontFamily ?? 'Arial, sans-serif').split(',')[0].trim().replace(/['"]/g, '');
       svg += `<text
         x="${textX}"
         y="${textY}"
-        font-family="${cleanFontFamily}"
+        font-family="${cell.fontFamily ?? 'Arial, sans-serif'}"
         font-size="${fs}"
         font-weight="${fontWeight}"
         font-style="${fontStyle}"

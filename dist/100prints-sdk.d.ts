@@ -29,7 +29,7 @@ export declare interface BulkData {
 export declare interface BulkRenderOptions {
     templateId: string;
     rows: Record<string, any>[];
-    format?: 'pdf' | 'png';
+    format?: 'pdf' | 'png' | 'vector-pdf';
     quality?: 'draft' | 'standard' | 'high' | 'ultra';
     mode?: 'merged' | 'zip';
     onProgress?: (current: number, total: number, recordName: string) => void;
@@ -139,6 +139,9 @@ export declare interface Layer {
     color?: string;
     fontFamily?: string;
     fontUrl?: string | null;
+    smartSizing?: boolean;
+    minFontSize?: number;
+    textFitPadding?: number;
     textAlign?: 'left' | 'center' | 'right';
     backgroundColor?: string;
     barcodeValue?: string;
@@ -175,7 +178,7 @@ export declare interface LayerGroup {
     name: string;
 }
 
-export declare type LayerType = 'text' | 'image' | 'shape' | 'qr' | 'background' | 'barcode' | 'line' | 'frame' | 'textsvg' | 'table-svg' | 'chart-svg';
+export declare type LayerType = 'text' | 'image' | 'shape' | 'qr' | 'verification_id' | 'background' | 'barcode' | 'line' | 'frame' | 'textsvg' | 'table-svg' | 'chart-svg';
 
 export declare interface LogicCondition {
     left?: Operand;
@@ -221,7 +224,7 @@ export declare interface PreviewOptions {
 export declare interface RenderOptions {
     templateId: string;
     payload?: Record<string, any>;
-    format?: 'pdf' | 'png';
+    format?: 'pdf' | 'png' | 'vector-pdf';
     quality?: 'draft' | 'standard' | 'high' | 'ultra';
     side?: 'front' | 'back' | 'both';
 }

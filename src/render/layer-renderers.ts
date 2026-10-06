@@ -1,6 +1,8 @@
 import Konva from 'konva';
 import { Layer } from '../types';
-import { applyKonvaFill, applyCommonProps } from './konva-helpers';
+import { applyKonvaFill, applyCommonProps, getBorderBox } from './konva-helpers';
+import { fitBrowserTextSize } from './smart-text-sizing';
+import { ensureCustomTextFont, getEditorTextVerticalOffset } from './editor-text-alignment';
 import { loadImage } from '../assets/asset-loader';
 import { generateQRDataUrl } from '../assets/qr-generator';
 import { generateBarcodeDataUrl } from '../assets/barcode-generator';
@@ -132,41 +134,49 @@ export function renderLineLayer(konvaLayer: Konva.Layer, layer: Layer): void {
 export async function renderTextLayer(konvaLayer: Konva.Layer, layer: Layer): Promise<void> {
   const w = layer.width || 200;
   const h = layer.height || 40;
-  const bw = layer.borderWidth || 0;
-  const innerW = Math.max(1, w - bw);
-  const innerH = Math.max(1, h - bw);
+  const { borderWidth: bw, width: borderW, height: borderH, cornerRadius } = getBorderBox(layer, w, h);
 
   const isItalic = layer.fontStyle === 'italic';
   const rawWeight = layer.fontWeight ?? 'normal';
   const fontStyle = `${isItalic ? 'italic ' : ''}${rawWeight}`.trim();
 
-  // ── Mirror CanvasRenderer.tsx: wait for the exact font+weight before drawing ──
-  // Konva.Text draws on the canvas synchronously. If the FontFace bytes haven't
-  // been decoded yet the browser substitutes a system font, causing the mismatch.
-  const fontFamily = (layer.fontFamily || 'Inter').split(',')[0].trim().replace(/['\"]/g, '');
-  const fontDescriptor = `${fontStyle} ${layer.fontSize || 24}px "${fontFamily}"`;
-  try {
-    await document.fonts.load(fontDescriptor, layer.content || 'Ag');
-  } catch { /* proceed — fall back to whatever the browser has */ }
+  await ensureCustomTextFont(layer);
 
   const text = new Konva.Text({
-    width: innerW,
-    height: innerH,
+    width: w,
+    height: h,
     text: layer.content || '',
-    fontSize: layer.fontSize,
+    fontSize: fitBrowserTextSize(layer, layer.content || ''),
     fontFamily: layer.fontFamily || 'Inter, Arial, sans-serif',
     fontStyle: fontStyle,
     textDecoration: layer.textDecoration === 'underline' ? 'underline' : 'empty',
     align: layer.textAlign || 'center',
     verticalAlign: 'middle',
+    padding: bw ? bw + 4 : 0,
     lineHeight: layer.lineHeight || 1.2,
     letterSpacing: layer.letterSpacing || 0,
-    wrap: 'word',
+    wrap: layer.smartSizing ? 'none' : 'word',
     listening: false,
   });
 
-  applyKonvaFill(text, layer, innerW, innerH);
-  applyCommonProps(text, layer, innerW, innerH);
+  applyKonvaFill(text, layer, w, h);
+  applyCommonProps(text, layer, w, h);
+  if (layer.fontUrl) {
+    const verticalOffset = getEditorTextVerticalOffset(layer, text, w, h);
+    text.offsetY(text.offsetY() - verticalOffset);
+  }
+  if (bw) {
+    const border = new Konva.Rect({
+      width: borderW,
+      height: borderH,
+      cornerRadius,
+      stroke: layer.borderColor || '#000000',
+      strokeWidth: bw,
+      listening: false,
+    });
+    applyCommonProps(border, layer, borderW, borderH);
+    konvaLayer.add(border);
+  }
   konvaLayer.add(text);
 }
 
@@ -317,13 +327,14 @@ export async function renderChartSvgLayer(konvaLayer: Konva.Layer, layer: Layer,
 export async function renderImageLayer(
   konvaLayer: Konva.Layer,
   layer: Layer,
-  assetMap: Record<string, string | HTMLImageElement | ImageBitmap> = {},
+  assetMap: Record<string, string | HTMLImageElement | ImageBitmap>,
 ): Promise<void> {
   const w = layer.width || 100;
   const h = layer.height || 100;
-  const bw = layer.borderWidth || 0;
-  const innerW = Math.max(1, w - bw);
-  const innerH = Math.max(1, h - bw);
+  const { borderWidth: bw, width: borderW, height: borderH, cornerRadius: borderRadius } = getBorderBox(layer, w, h);
+  const contentW = Math.max(1, w - bw * 2);
+  const contentH = Math.max(1, h - bw * 2);
+  const contentRadius = layer.type === 'frame' ? 9999 : Math.max(0, (layer.borderRadius || 0) - bw);
 
   let src: string | HTMLImageElement | ImageBitmap | undefined = layer.content || '';
 
@@ -353,7 +364,7 @@ export async function renderImageLayer(
   let crop: { x: number; y: number; width: number; height: number } | undefined;
   if (shouldCrop) {
     const imageRatio = image.width / image.height;
-    const layerRatio = innerW / (innerH || 1);
+    const layerRatio = contentW / (contentH || 1);
     crop = { x: 0, y: 0, width: image.width, height: image.height };
     if (imageRatio > layerRatio) {
       crop.width = image.height * layerRatio;
@@ -366,16 +377,27 @@ export async function renderImageLayer(
 
   const kImg = new Konva.Image({
     image: image,
-    width: innerW,
-    height: innerH,
+    width: contentW,
+    height: contentH,
     crop: crop,
-    cornerRadius: layer.type === 'frame' ? 9999 : (layer.borderRadius || 0),
+    cornerRadius: contentRadius,
     listening: false,
   });
 
-  applyCommonProps(kImg, layer, innerW, innerH);
-  if (bw) { kImg.stroke(layer.borderColor || '#000000'); kImg.strokeWidth(bw); }
+  applyCommonProps(kImg, layer, contentW, contentH);
   konvaLayer.add(kImg);
+  if (bw) {
+    const border = new Konva.Rect({
+      width: borderW,
+      height: borderH,
+      cornerRadius: borderRadius,
+      stroke: layer.borderColor || '#000000',
+      strokeWidth: bw,
+      listening: false,
+    });
+    applyCommonProps(border, layer, borderW, borderH);
+    konvaLayer.add(border);
+  }
 }
 
 export async function renderQRBarcodeLayer(konvaLayer: Konva.Layer, layer: Layer): Promise<void> {

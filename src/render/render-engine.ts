@@ -5,6 +5,9 @@ import { resolveContent } from './variable-resolver';
 import { createJsPDFInstance, addDataUrlToJsPDF } from '../export/pdf-exporter';
 import { dataUrlToBlob } from '../export/png-exporter';
 import { loadImage } from '../assets/asset-loader';
+import { isDynamicTextLayer } from './smart-text-sizing';
+import { renderVectorPdf } from '../export/vector-pdf-renderer';
+import type { VectorFontManifestItem } from '../export/vector-fonts';
 import {
   renderShapeLayer,
   renderLineLayer,
@@ -142,6 +145,7 @@ export async function renderSingleRecord(
       content = assetMap[content] as string;
     }
     resolvedLayer.content = content;
+    resolvedLayer.smartSizing = !!layer.smartSizing && isDynamicTextLayer(layer);
 
     const tableData = resolvedLayer.tableData;
     if (tableData && tableData.cells) {
@@ -209,6 +213,7 @@ export async function renderSingleRecord(
         case 'background':
         case 'frame': await renderImageLayer(konvaLayer, resolvedLayer, assetMap); break;
         case 'qr':
+        case 'verification_id':
         case 'barcode': await renderQRBarcodeLayer(konvaLayer, resolvedLayer); break;
       }
     } catch (err) {
@@ -269,7 +274,7 @@ export async function preloadTemplateImages(
 }
 
 export class RenderEngine {
-  async renderSingle(template: DocumentTemplate, options: RenderOptions): Promise<RenderResult> {
+  async renderSingle(template: DocumentTemplate, options: RenderOptions, fontManifest: VectorFontManifestItem[] = []): Promise<RenderResult> {
     const format = options.format || 'pdf';
     const quality = options.quality || 'high';
     const side = options.side || 'both';
@@ -282,6 +287,21 @@ export class RenderEngine {
     const pdfOrientation = wPt > hPt ? 'l' : 'p';
     
     const rowData = options.payload || {};
+
+    if (format === 'vector-pdf') {
+      const layers = [...(template.frontLayers || []), ...(template.backLayers || [])];
+      const assetMap = await preloadTemplateImages(layers, rowData);
+      const pages: Array<{ layers: Layer[]; rowData: Record<string, any>; assetMap: Record<string, string | HTMLImageElement | ImageBitmap> }> = [];
+      if (side === 'front' || side === 'both') {
+        pages.push({ layers: template.frontLayers || [], rowData, assetMap });
+      }
+      if ((side === 'back' || side === 'both') && template.backLayers?.length) {
+        pages.push({ layers: template.backLayers, rowData, assetMap });
+      }
+      if (!pages.length) throw new Error('No renderable side found');
+      const blob = await renderVectorPdf(template, pages, scale, fontManifest);
+      return { blob, mimeType: 'application/pdf', sizeKB: Math.round(blob.size / 1024) };
+    }
     
     // Hidden container
     const container = document.createElement('div');
