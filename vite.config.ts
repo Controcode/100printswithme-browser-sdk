@@ -10,19 +10,40 @@ export default defineConfig({
       formats: ['es', 'umd'],
       fileName: (format) => `100prints-sdk.${format}.js`,
     },
+
     rollupOptions: {
-      // Bundling everything so the SDK is fully self-contained.
+      // Bundle everything so the SDK stays fully self-contained.
       external: [],
+
       output: {
         inlineDynamicImports: true,
-      }
+      },
     },
+
     target: 'es2020',
+
     assetsInlineLimit: 600000,
+
     minify: 'esbuild',
-    sourcemap: true,
+
+    // Source maps are useful for debugging,
+    // but they add a lot of size to the published npm package.
+    sourcemap: false,
   },
+
   plugins: [
-    dts({ rollupTypes: true })
+    dts({
+      rollupTypes: true,
+
+      include: ['src'],
+
+      exclude: [
+        '**/*.test.ts',
+        '**/*.test.tsx',
+        '**/*.spec.ts',
+        '**/*.spec.tsx',
+        '**/__tests__/**',
+      ],
+    }),
   ],
 });
