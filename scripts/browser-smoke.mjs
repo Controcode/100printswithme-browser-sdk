@@ -5,6 +5,7 @@ import { existsSync, readFileSync } from 'node:fs';
 const fontDataUrl = process.env.FONT_FIXTURE
   ? `data:font/ttf;base64,${readFileSync(process.env.FONT_FIXTURE).toString('base64')}`
   : null;
+const fontFamily = process.env.FONT_FAMILY || 'Inter';
 
 const chromePath = [
   process.env.CHROME_PATH,
@@ -26,7 +27,7 @@ try {
   page.on('console', message => { if (message.type() === 'warning' || message.type() === 'error') browserWarnings.push(message.text()); });
   await page.goto('about:blank');
   await page.addScriptTag({ path: resolve('dist/100prints-sdk.umd.js') });
-  const result = await page.evaluate(async (fontDataUrl) => {
+  const result = await page.evaluate(async ({ fontDataUrl, fontFamily }) => {
     const canvas = document.createElement('canvas');
     canvas.width = 40; canvas.height = 20;
     const ctx = canvas.getContext('2d');
@@ -35,8 +36,11 @@ try {
     const photo = canvas.toDataURL('image/png');
     const frontLayers = [
       { id: 'text', type: 'text', x: 5, y: 5, width: 100, height: 25, content: 'A\nB',
-        fontFamily: fontDataUrl ? 'Inter' : 'Arial', fontWeight: fontDataUrl ? 700 : 400,
+        fontFamily: fontDataUrl ? fontFamily : 'Arial', fontWeight: fontDataUrl ? 700 : 400,
         fontUrl: fontDataUrl, fontSize: 14, color: '#111', visible: true },
+      ...(fontDataUrl ? [{ id: 'text-italic', type: 'text', x: 105, y: 5, width: 80, height: 25,
+        content: 'Italic', fontFamily, fontWeight: 700, fontStyle: 'italic',
+        fontUrl: fontDataUrl, fontSize: 14, color: '#111', visible: true }] : []),
       { id: 'shape', type: 'shape', x: 110, y: 5, width: 35, height: 25, color: '#0a0',
         borderWidth: 2, borderColor: '#000', borderRadius: 8, visible: true },
       { id: 'image', type: 'image', x: 5, y: 35, width: 45, height: 35, content: photo,
@@ -63,14 +67,30 @@ try {
       backgroundColor: '#ffffff', dimensions: { width: 200, height: 100, label: 'Test' },
       frontLayers, backLayers: [{ id: 'back-shape', type: 'shape', x: 20, y: 20,
         width: 100, height: 50, color: '#abc', visible: true }] },
-      fontManifest: fontDataUrl ? [{ family: 'Inter', weight: 700, url: fontDataUrl }] : [] };
+      fontManifest: fontDataUrl ? [
+        { family: fontFamily, weight: 700, style: 'normal', url: fontDataUrl },
+        { family: fontFamily, weight: 700, style: 'italic', url: fontDataUrl },
+      ] : [] };
     const originalFetch = window.fetch.bind(window);
-    window.fetch = async (input, init) => String(input).startsWith('https://example.test/')
-      ? new Response(JSON.stringify(response), { status: 200, headers: { 'content-type': 'application/json' } })
-      : originalFetch(input, init);
+    let fontFetchCount = 0;
+    window.fetch = async (input, init) => {
+      if (String(input).startsWith('https://example.test/')) {
+        return new Response(JSON.stringify(response), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+      if (fontDataUrl && String(input) === fontDataUrl) {
+        fontFetchCount++;
+        await new Promise(resolve => setTimeout(resolve, 120));
+      }
+      return originalFetch(input, init);
+    };
     const sdk = new window.BrowserSDK.BrowserSDK({ key: 'pk_test', baseUrl: 'https://example.test' });
+    const coldStartedAt = performance.now();
     const png = await sdk.render({ templateId: 'fixture', format: 'png', quality: 'draft' });
+    const coldRenderMs = performance.now() - coldStartedAt;
+    const coldFontFetchCount = fontFetchCount;
+    const pngWarm = await sdk.render({ templateId: 'fixture', format: 'png', quality: 'draft' });
     const pngStandard = await sdk.render({ templateId: 'fixture', format: 'png', quality: 'standard' });
+    const warmFontFetchCount = fontFetchCount;
     const pngHigh = await sdk.render({ templateId: 'fixture', format: 'png', quality: 'high' });
     const pngUltra = await sdk.render({ templateId: 'fixture', format: 'png', quality: 'ultra' });
     const raster = await sdk.render({ templateId: 'fixture', format: 'pdf', quality: 'draft' });
@@ -82,7 +102,41 @@ try {
       format: 'vector-pdf', mode: 'merged', quality: 'draft' });
     const zipped = await sdk.renderBulk({ templateId: 'fixture', rows: [{ name: 'One' }],
       format: 'vector-pdf', mode: 'zip', quality: 'draft' });
+
+    if (typeof window.HundredPrints !== 'function') throw new Error('window.HundredPrints is not a constructor');
+    const hp = new window.HundredPrints({ publishableKey: 'pk_test', baseUrl: 'https://example.test' });
+    const v2Front = await hp.png({ templateId: 'fixture', data: { Name: 'V2' }, side: 'front', quality: 'draft' });
+    const v2Back = await hp.png({ templateId: 'fixture', side: 'back', quality: 'draft' });
+    const v2Jpeg = await hp.jpeg({ templateId: 'fixture', side: 'front', quality: 'draft' });
+    const v2PdfFront = await hp.pdf({ templateId: 'fixture', includeBack: false, quality: 'draft' });
+    const v2PdfBoth = await hp.pdf({ templateId: 'fixture', includeBack: true, quality: 'draft' });
+    const v2Vector = await hp.vectorPdf({ templateId: 'fixture', includeBack: true, quality: 'draft' });
+    const v2Generic = await hp.render({ templateId: 'fixture', output: { format: 'png', side: 'back', quality: 'draft' } });
+    const target = document.createElement('img'); target.id = 'v2-target'; document.body.appendChild(target);
+    const v2RenderedTo = await hp.renderTo('#v2-target', {
+      templateId: 'fixture', output: { format: 'jpeg', side: 'front', quality: 'draft' },
+    });
+    let downloadClicks = 0;
+    const originalAnchorClick = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function () { downloadClicks++; };
+    await hp.download({ templateId: 'fixture', output: { format: 'pdf', includeBack: true, quality: 'draft' }, filename: 'fixture.pdf' });
+    HTMLAnchorElement.prototype.click = originalAnchorClick;
+    await new Promise(resolve => setTimeout(resolve, 0));
+    let invalidSideCode = null;
+    try { await hp.render({ templateId: 'fixture', output: { format: 'png' } }); }
+    catch (error) { invalidSideCode = error.code; }
     const pngBitmap = await createImageBitmap(png.blob);
+    const warmBitmap = await createImageBitmap(pngWarm.blob);
+    const pixelData = bitmap => {
+      const output = document.createElement('canvas');
+      output.width = bitmap.width; output.height = bitmap.height;
+      const context = output.getContext('2d');
+      context.drawImage(bitmap, 0, 0);
+      return context.getImageData(0, 0, output.width, output.height).data;
+    };
+    const coldPixels = pixelData(pngBitmap);
+    const warmPixels = pixelData(warmBitmap);
+    const coldWarmEqual = coldPixels.length === warmPixels.length && coldPixels.every((value, index) => value === warmPixels[index]);
     const standardBitmap = await createImageBitmap(pngStandard.blob);
     const highBitmap = await createImageBitmap(pngHigh.blob);
     const ultraBitmap = await createImageBitmap(pngUltra.blob);
@@ -100,15 +154,47 @@ try {
       preview: { width: preview.width, height: preview.height },
       bulk: { header: await pdfHeader(bulk.blob), bytes: bulk.blob.size },
       zipped: { header: await pdfHeader(zipped.blob), bytes: zipped.blob.size },
+      v2: {
+        global: typeof window.HundredPrints,
+        front: { format: v2Front.format, side: v2Front.side, width: v2Front.width, height: v2Front.height, url: v2Front.url.startsWith('blob:') },
+        back: { format: v2Back.format, side: v2Back.side },
+        jpeg: { format: v2Jpeg.format, type: v2Jpeg.blob.type, side: v2Jpeg.side },
+        pdfFront: { format: v2PdfFront.format, pages: v2PdfFront.pages },
+        pdfBoth: { format: v2PdfBoth.format, pages: v2PdfBoth.pages },
+        vector: { format: v2Vector.format, pages: v2Vector.pages },
+        generic: { format: v2Generic.format, side: v2Generic.side },
+        renderTo: { assigned: target.src === v2RenderedTo.url, format: v2RenderedTo.format },
+        downloadClicks,
+        invalidSideCode,
+      },
       fontFixture: !!fontDataUrl,
+      fontReadiness: fontDataUrl ? {
+        coldRenderMs,
+        coldFontFetchCount,
+        warmFontFetchCount,
+        normal: document.fonts.check(`normal 700 16px "${fontFamily}"`, 'Ag'),
+        italic: document.fonts.check(`italic 700 16px "${fontFamily}"`, 'Italic'),
+        coldWarmEqual,
+        faces: [...document.fonts].filter(face => face.family === fontFamily).map(face => ({
+          weight: face.weight, style: face.style, status: face.status,
+        })),
+      } : null,
     };
-  }, fontDataUrl);
+  }, { fontDataUrl, fontFamily });
   if (result.png.width !== 200 || result.png.height !== 100 || result.pngStandard.width !== 400 || result.pngStandard.height !== 200 || result.pngHigh.width !== 800 || result.pngHigh.height !== 400 || result.pngUltra.width !== 1600 || result.pngUltra.height !== 800) throw new Error('PNG dimensions differ from quality settings');
   if (result.raster.header !== '%PDF-' || result.vector.header !== '%PDF-' || result.bulk.header !== '%PDF-') throw new Error('Invalid PDF output');
   if (result.vector.pages !== 2) throw new Error('Vector PDF did not contain front and back pages');
   if (!result.zipped.header.startsWith('PK\u0003\u0004')) throw new Error('Bulk ZIP is invalid');
   if (result.preview.width !== 200 || result.preview.height !== 100 || result.back.type !== 'image/png') throw new Error('Preview or back render failed');
-  if (fontDataUrl && !result.vector.fonts.some(font => font.includes('Inter'))) throw new Error('Custom font was not embedded in vector PDF');
+  if (result.v2.global !== 'function' || !result.v2.front.url || result.v2.front.side !== 'front' || result.v2.back.side !== 'back') throw new Error('V2 image API failed');
+  if (result.v2.jpeg.type !== 'image/jpeg' || result.v2.jpeg.format !== 'jpeg') throw new Error('V2 JPEG failed');
+  if (result.v2.pdfFront.pages !== 1 || result.v2.pdfBoth.pages !== 2 || result.v2.vector.pages !== 2) throw new Error('V2 PDF page semantics failed');
+  if (!result.v2.renderTo.assigned || result.v2.downloadClicks !== 1 || result.v2.invalidSideCode !== 'UNSUPPORTED_SIDE') throw new Error('V2 browser helpers failed');
+  if (fontDataUrl && !result.vector.fonts.some(font => font.toLowerCase().includes(fontFamily.replace(/\s+/g, '').toLowerCase()))) throw new Error('Custom font was not embedded in vector PDF');
+  if (fontDataUrl && (!result.fontReadiness.normal || !result.fontReadiness.italic)) throw new Error('Exact browser font faces were not ready');
+  if (fontDataUrl && result.fontReadiness.coldRenderMs < 100) throw new Error('Cold render did not wait for the delayed font source');
+  if (fontDataUrl && result.fontReadiness.warmFontFetchCount !== result.fontReadiness.coldFontFetchCount) throw new Error('Warm render fetched fonts again');
+  if (fontDataUrl && !result.fontReadiness.coldWarmEqual) throw new Error('Cold and warm renders differ');
   if (browserWarnings.some(warning => /Failed to render layer|Failed to render (?:table|chart) SVG|Curved text shadow skipped/i.test(warning))) throw new Error(`Renderer warning: ${browserWarnings.join(' | ')}`);
   result.browserWarnings = browserWarnings;
   console.log(JSON.stringify(result, null, 2));

@@ -1,30 +1,6 @@
 import Konva from 'konva';
 import { Layer } from '../types';
 
-const fontLoads = new Map<string, Promise<void>>();
-
-export async function ensureCustomTextFont(layer: Layer): Promise<void> {
-  if (!layer.fontUrl) return;
-  const family = (layer.fontFamily || '').split(',')[0].trim().replace(/^['"]|['"]$/g, '');
-  if (!family) return;
-  const key = `${family}::${layer.fontUrl}`;
-  let loading = fontLoads.get(key);
-  if (!loading) {
-    loading = (async () => {
-      if (!Array.from(document.fonts).some(face => face.family.replace(/^['"]|['"]$/g, '') === family)) {
-        try {
-          const face = new FontFace(family, `url(${layer.fontUrl})`);
-          await face.load();
-          document.fonts.add(face);
-        } catch { /* Keep the browser's fallback if the font is unavailable. */ }
-      }
-      try { await document.fonts.load(`${layer.fontSize || 14}px "${family}"`, layer.content || 'Ag'); } catch { /* Continue with the available font. */ }
-    })();
-    fontLoads.set(key, loading);
-  }
-  await loading;
-}
-
 // Konva centers canvas text on the em baseline; the editor centers a CSS line box.
 // For custom fonts these baselines can differ even with identical x/y/fontSize.
 export function getEditorTextVerticalOffset(layer: Layer, text: Konva.Text, width: number, height: number): number {

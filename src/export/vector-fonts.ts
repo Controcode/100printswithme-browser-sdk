@@ -1,8 +1,10 @@
 import { getUsWeightClass, instanceFontAtWeight } from './font-instancer';
+import { resolvePlatformFont } from '../fonts/platform-fonts';
 
 export interface VectorFontManifestItem {
   family: string;
   weight: number;
+  style?: 'normal' | 'italic';
   url?: string;
 }
 
@@ -42,7 +44,10 @@ export async function fetchFontBuffer(
   fontUrl?: string | null,
   options?: { instanceVariableFonts?: boolean },
 ): Promise<{ buffer: ArrayBuffer; embedKey: string; syntheticOblique: boolean; syntheticBold: boolean } | null> {
-  const sourceUrl = fontUrl || await resolveWebFontUrl(family, weight, style);
+  const numericWeight = Number(weight) || (String(weight).toLowerCase() === 'bold' ? 700 : 400);
+  const platform = fontUrl ? null : resolvePlatformFont(family.split(',')[0].trim().replace(/^['"]|['"]$/g, ''),
+    numericWeight, style === 'italic' ? 'italic' : 'normal');
+  const sourceUrl = fontUrl || platform?.url || await resolveWebFontUrl(family, weight, style);
   if (!sourceUrl) return null;
   let buffer = cache.get(sourceUrl);
   if (!buffer) {
@@ -52,7 +57,6 @@ export async function fetchFontBuffer(
     // PDFKit's fontkit accepts WOFF2 directly. Keep its table structure intact.
     cache.set(sourceUrl, buffer);
   }
-  const numericWeight = Number(weight) || (String(weight).toLowerCase() === 'bold' ? 700 : 400);
   const embedKey = `${sourceUrl}::${numericWeight}::${options?.instanceVariableFonts ? 'pin' : 'raw'}`;
   let preparedEntry = preparedCache.get(embedKey);
   if (!preparedEntry) {

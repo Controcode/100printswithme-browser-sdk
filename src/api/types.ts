@@ -13,6 +13,6 @@ export interface SdkRenderResponse {
   backgroundColor: string;
   frontLayers: any[];
   backLayers?: any[];
-  fontManifest: { family: string; weight: number; url?: string }[];
+  fontManifest: { family: string; weight: number; style?: 'normal' | 'italic'; url?: string }[];
   sample_data?: any;
 }

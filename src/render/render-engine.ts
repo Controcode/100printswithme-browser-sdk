@@ -19,69 +19,6 @@ import {
   renderQRBarcodeLayer,
 } from './layer-renderers';
 
-/**
- * Pre-warms every font used across all layers by calling document.fonts.load()
- * for each unique family+weight combination — exactly mirroring what the frontend
- * renderOrchestrator does before drawing. Without this step the Konva canvas
- * (and Canvg) silently fall back to the system font for any frame that renders
- * before the custom font is ready in the browser font engine, causing the
- * visual mismatch between SDK output and frontend output.
- */
-async function preloadTemplateFonts(layers: Layer[]): Promise<void> {
-  type FontKey = { family: string; weight: string | number; size: number };
-  const seen = new Set<string>();
-  const keys: FontKey[] = [];
-
-  for (const layer of layers) {
-    if (layer.visible === false) continue;
-
-    // Regular text and textsvg layers
-    if ((layer.type === 'text' || layer.type === 'textsvg') && layer.fontFamily) {
-      const family = layer.fontFamily.split(',')[0].trim().replace(/['"]/g, '');
-      const weight = layer.fontWeight || 'normal';
-      const size   = layer.fontSize || 24;
-      const key    = `${family}::${weight}::${size}`;
-      if (!seen.has(key)) { seen.add(key); keys.push({ family, weight, size }); }
-    }
-
-    // Table-svg cells
-    if (layer.type === 'table-svg' && layer.tableData?.cells) {
-      for (const row of layer.tableData.cells) {
-        for (const cell of row) {
-          if (cell?.fontFamily) {
-            const family = cell.fontFamily.split(',')[0].trim().replace(/['"]/g, '');
-            const weight = cell.fontWeight || 'normal';
-            const size   = cell.fontSize || 16;
-            const key    = `${family}::${weight}::${size}`;
-            if (!seen.has(key)) { seen.add(key); keys.push({ family, weight, size }); }
-          }
-        }
-      }
-    }
-
-    // Chart-svg font
-    if (layer.type === 'chart-svg' && layer.chartData?.fontFamily) {
-      const family = layer.chartData.fontFamily.split(',')[0].trim().replace(/['"]/g, '');
-      const weight = 'normal';
-      const size   = layer.chartData.fontSize || 11;
-      const key    = `${family}::${weight}::${size}`;
-      if (!seen.has(key)) { seen.add(key); keys.push({ family, weight, size }); }
-    }
-  }
-
-  // Fire all load calls in parallel, never throw — mirrors frontend behaviour
-  await Promise.allSettled(
-    keys.map(({ family, weight, size }) =>
-      document.fonts
-        .load(`${weight !== 'normal' ? weight + ' ' : ''}${size}px "${family}"`, 'Ag')
-        .catch(() => { /* ignore individual font errors */ })
-    )
-  );
-
-  // Extra safety: wait for the font engine to finish processing any pending loads
-  try { await (document.fonts as any).ready; } catch { /* ignore */ }
-}
-
 const SCALE_MAP: Record<string, number> = {
   draft: 1,     // 72 DPI
   standard: 2,  // 150 DPI
@@ -300,7 +237,7 @@ export class RenderEngine {
       }
       if (!pages.length) throw new Error('No renderable side found');
       const blob = await renderVectorPdf(template, pages, scale, fontManifest);
-      return { blob, mimeType: 'application/pdf', sizeKB: Math.round(blob.size / 1024) };
+      return { blob, mimeType: 'application/pdf', sizeKB: Math.round(blob.size / 1024), pages: pages.length };
     }
     
     // Hidden container
@@ -317,7 +254,7 @@ export class RenderEngine {
     const konvaLayer = new Konva.Layer({ listening: false });
     stage.add(konvaLayer);
 
-    const useJpeg = format === 'pdf';
+    const useJpeg = format === 'pdf' || format === 'jpeg';
     const imgFormat = useJpeg ? 'JPEG' : 'PNG';
 
     try {
@@ -325,13 +262,6 @@ export class RenderEngine {
         ...(template.frontLayers || []),
         ...(template.backLayers || [])
       ];
-
-      // ── Font pre-warming (mirrors frontend renderOrchestrator) ──────────────
-      // Must happen AFTER fontLoader.loadFonts() has injected FontFace objects
-      // and BEFORE any Konva / Canvg draw calls. Without this the canvas engine
-      // can start drawing before the font bytes are available and falls back to
-      // the system font, producing a different weight/metrics than the frontend.
-      await preloadTemplateFonts(allLayers);
 
       const assetMap = await preloadTemplateImages(allLayers, rowData);
 
@@ -352,7 +282,7 @@ export class RenderEngine {
         );
       }
 
-      if (format === 'png') {
+      if (format === 'png' || format === 'jpeg') {
         // Return front or back or combined? Standard behavior is to return front if 'both' is requested for PNG,
         // or the specific side if specified.
         const urlToUse = side === 'back' ? backDataUrl : frontDataUrl;
@@ -360,8 +290,10 @@ export class RenderEngine {
         const blob = dataUrlToBlob(urlToUse);
         return {
           blob,
-          mimeType: 'image/png',
-          sizeKB: Math.round(blob.size / 1024)
+          mimeType: format === 'jpeg' ? 'image/jpeg' : 'image/png',
+          sizeKB: Math.round(blob.size / 1024),
+          width: canvasW * scale,
+          height: canvasH * scale,
         };
       } else {
         const pdf = await createJsPDFInstance({ orientation: pdfOrientation, format: [wPt, hPt] });
@@ -380,7 +312,8 @@ export class RenderEngine {
         return {
           blob,
           mimeType: 'application/pdf',
-          sizeKB: Math.round(blob.size / 1024)
+          sizeKB: Math.round(blob.size / 1024),
+          pages: Number(!!frontDataUrl) + Number(!!backDataUrl),
         };
       }
     } finally {
@@ -416,9 +349,6 @@ export class RenderEngine {
       ...(template.frontLayers || []),
       ...(template.backLayers || [])
     ];
-
-    // ── Font pre-warming (same as renderSingle) ─────────────────────────────
-    await preloadTemplateFonts(allLayers);
 
     const assetMap = await preloadTemplateImages(allLayers, rowData);
 

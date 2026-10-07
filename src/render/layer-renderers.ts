@@ -2,7 +2,7 @@ import Konva from 'konva';
 import { Layer } from '../types';
 import { applyKonvaFill, applyCommonProps, getBorderBox } from './konva-helpers';
 import { fitBrowserTextSize } from './smart-text-sizing';
-import { ensureCustomTextFont, getEditorTextVerticalOffset } from './editor-text-alignment';
+import { getEditorTextVerticalOffset } from './editor-text-alignment';
 import { loadImage } from '../assets/asset-loader';
 import { generateQRDataUrl } from '../assets/qr-generator';
 import { generateBarcodeDataUrl } from '../assets/barcode-generator';
@@ -140,8 +140,6 @@ export async function renderTextLayer(konvaLayer: Konva.Layer, layer: Layer): Pr
   const rawWeight = layer.fontWeight ?? 'normal';
   const fontStyle = `${isItalic ? 'italic ' : ''}${rawWeight}`.trim();
 
-  await ensureCustomTextFont(layer);
-
   const text = new Konva.Text({
     width: w,
     height: h,
@@ -189,11 +187,6 @@ export async function renderTextSvgLayer(konvaLayer: Konva.Layer, layer: Layer, 
 
   const { Canvg } = await import('canvg');
 
-  const fontFamily = layer.fontFamily || 'Inter';
-  try {
-    await document.fonts.load(`${layer.fontSize || 24}px "${fontFamily}"`, layer.content || 'Ag');
-  } catch { /* font load timeout — proceed anyway */ }
-
   const svgString = generateTextSvgString(layer, layer.content || '', innerW, innerH);
 
   const canvas = document.createElement('canvas');
@@ -226,25 +219,6 @@ export async function renderTableSvgLayer(konvaLayer: Konva.Layer, layer: Layer,
   const h = layer.height || 200;
 
   const { Canvg } = await import('canvg');
-
-  // ── Pre-load all unique fonts used across table cells ──────────────────────
-  if (layer.tableData?.cells) {
-    const fontFamilies = new Set<string>();
-    const fontSize = 16; // generic size for font loading
-    for (const row of layer.tableData.cells) {
-      for (const cell of row) {
-        if (cell?.fontFamily) {
-          const primary = cell.fontFamily.split(',')[0].trim().replace(/['"]/g, '');
-          fontFamilies.add(primary);
-        }
-      }
-    }
-    await Promise.allSettled(
-      [...fontFamilies].map(f =>
-        document.fonts.load(`${fontSize}px "${f}"`, 'Ag').catch(() => { /* ignore */ })
-      )
-    );
-  }
 
   const svgString = generateTableSvg(layer);
   if (!svgString) return;
@@ -284,12 +258,6 @@ export async function renderChartSvgLayer(konvaLayer: Konva.Layer, layer: Layer,
   const h = layer.height || 250;
 
   const { Canvg } = await import('canvg');
-
-  // Pre-load font if applicable
-  if (layer.chartData?.fontFamily) {
-    const primary = layer.chartData.fontFamily.split(',')[0].trim().replace(/['"]/g, '');
-    await document.fonts.load(`${layer.chartData.fontSize || 11}px "${primary}"`, 'Ag').catch(() => { /* ignore */ });
-  }
 
   const svgString = generateChartSvg(layer);
   if (!svgString) return;

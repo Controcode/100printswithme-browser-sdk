@@ -1,5 +1,18 @@
 export declare type AppStep = 'landing' | 'setup' | 'editor' | 'finalize' | 'feedback';
 
+export declare interface BasePublicRenderResult {
+    blob: Blob;
+    url: string;
+    download(filename?: string): void;
+    revoke(): void;
+}
+
+export declare interface BaseRenderInput {
+    templateId: string;
+    data?: Record<string, unknown>;
+}
+
+/** @deprecated Use HundredPrints for new integrations. */
 export declare class BrowserSDK {
     private apiClient;
     private templateCache;
@@ -117,11 +130,73 @@ export declare interface DocumentTemplate {
     isCommunity?: boolean;
 }
 
+export declare type DownloadInput = RenderInput & {
+    filename?: string;
+};
+
 export declare interface EditorState {
     currentTemplate: DocumentTemplate;
     selectedLayerId: string | null;
     activeSide: 'front' | 'back';
     zoom: number;
+}
+
+export declare class HundredPrints {
+    private readonly controller;
+    constructor(options: HundredPrintsOptions);
+    render(input: ImageRenderRequest): Promise<ImageRenderResult>;
+    render(input: PdfRenderRequest): Promise<PdfRenderResult>;
+    png(input: ImageRenderInput): Promise<ImageRenderResult>;
+    jpeg(input: ImageRenderInput): Promise<ImageRenderResult>;
+    pdf(input: PdfRenderInput): Promise<PdfRenderResult>;
+    vectorPdf(input: PdfRenderInput): Promise<PdfRenderResult>;
+    renderTo(target: string | HTMLImageElement, input: ImageRenderRequest): Promise<ImageRenderResult>;
+    download(input: DownloadInput): Promise<void>;
+    private resolveImageTarget;
+}
+
+export declare class HundredPrintsError extends Error {
+    readonly code: HundredPrintsErrorCode;
+    readonly details?: unknown;
+    readonly cause?: unknown;
+    constructor(code: HundredPrintsErrorCode, message: string, options?: {
+        details?: unknown;
+        cause?: unknown;
+    });
+}
+
+export declare type HundredPrintsErrorCode = 'AUTH_INVALID' | 'TEMPLATE_NOT_FOUND' | 'INVALID_INPUT' | 'UNSUPPORTED_FORMAT' | 'UNSUPPORTED_SIDE' | 'INVALID_TARGET' | 'FONT_LOAD_FAILED' | 'RENDER_FAILED' | 'DOWNLOAD_FAILED';
+
+export declare interface HundredPrintsOptions {
+    publishableKey: string;
+    /** Override the API origin for self-hosted or development environments. */
+    baseUrl?: string;
+}
+
+export declare type ImageRenderFormat = 'png' | 'jpeg';
+
+export declare interface ImageRenderInput extends BaseRenderInput {
+    side: RenderSide;
+    quality?: RenderQuality;
+    includeBack?: never;
+}
+
+export declare interface ImageRenderOutput {
+    format: ImageRenderFormat;
+    side: RenderSide;
+    quality?: RenderQuality;
+    includeBack?: never;
+}
+
+export declare type ImageRenderRequest = BaseRenderInput & {
+    output: ImageRenderOutput;
+};
+
+export declare interface ImageRenderResult extends BasePublicRenderResult {
+    format: ImageRenderFormat;
+    width: number;
+    height: number;
+    side: RenderSide;
 }
 
 export declare interface Layer {
@@ -214,6 +289,30 @@ export declare interface Operand {
 
 export declare type OperatorType = '==' | '!=' | '>' | '<' | '>=' | '<=' | 'contains' | 'starts_with' | 'regex' | '+' | '-' | '*' | '/' | 'average' | 'concat';
 
+export declare type PdfRenderFormat = 'pdf' | 'vector-pdf';
+
+export declare interface PdfRenderInput extends BaseRenderInput {
+    includeBack?: boolean;
+    quality?: RenderQuality;
+    side?: never;
+}
+
+export declare interface PdfRenderOutput {
+    format: PdfRenderFormat;
+    includeBack?: boolean;
+    quality?: RenderQuality;
+    side?: never;
+}
+
+export declare type PdfRenderRequest = BaseRenderInput & {
+    output: PdfRenderOutput;
+};
+
+export declare interface PdfRenderResult extends BasePublicRenderResult {
+    format: PdfRenderFormat;
+    pages: number;
+}
+
 export declare interface PreviewOptions {
     templateId: string;
     payload?: Record<string, any>;
@@ -221,19 +320,39 @@ export declare interface PreviewOptions {
     scale?: number;
 }
 
+export declare type PublicRenderResult = ImageRenderResult | PdfRenderResult;
+
+export declare type RenderFormat = ImageRenderFormat | PdfRenderFormat;
+
+export declare type RenderInput = BaseRenderInput & {
+    output: RenderOutput;
+};
+
 export declare interface RenderOptions {
     templateId: string;
     payload?: Record<string, any>;
-    format?: 'pdf' | 'png' | 'vector-pdf';
+    format?: 'pdf' | 'png' | 'jpeg' | 'vector-pdf';
     quality?: 'draft' | 'standard' | 'high' | 'ultra';
     side?: 'front' | 'back' | 'both';
 }
+
+export declare type RenderOutput = ImageRenderOutput | PdfRenderOutput;
+
+export declare type RenderQuality = 'draft' | 'standard' | 'high' | 'ultra';
 
 export declare interface RenderResult {
     blob: Blob;
     mimeType: string;
     sizeKB: number;
+    /** Output width in pixels for image renders. */
+    width?: number;
+    /** Output height in pixels for image renders. */
+    height?: number;
+    /** Actual number of pages emitted for document renders. */
+    pages?: number;
 }
+
+export declare type RenderSide = 'front' | 'back';
 
 export declare type RuleType = 'if' | 'else-if' | 'else' | 'compute' | 'output' | 'average' | 'round' | 'random' | 'text_format' | 'date_math';
 

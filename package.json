@@ -1,6 +1,6 @@
 {
   "name": "@100printswithme/browser-sdk",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Official Browser SDK for 100PrintsWithMe",
   "type": "module",
   "main": "./dist/100prints-sdk.umd.js",
@@ -23,6 +23,7 @@
     "build": "vite build && node scripts/postbuild.js",
     "test": "vitest run",
     "test:browser": "node scripts/browser-smoke.mjs",
+    "test:example": "node scripts/script-tag-smoke.mjs",
     "watch": "vite build --watch",
     "prepublishOnly": "npm run build"
   },

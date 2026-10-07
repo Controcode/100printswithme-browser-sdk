@@ -654,9 +654,12 @@ class FontManager {
     // file at its *default* instance (Montserrat = Thin, Merriweather = Light).
     // fontMap pins the axis to the requested weight before we embed it.
     try {
-      const manifestFont = this.manifest.find(item =>
-        item.family.toLowerCase() === normalizedFamily.toLowerCase() && item.weight === normalizedWeight
-      ) || this.manifest.find(item => item.family.toLowerCase() === normalizedFamily.toLowerCase());
+      const normalizedStyle = fontStyle === 'italic' ? 'italic' : 'normal';
+      const familyFonts = this.manifest.filter(item => item.family.toLowerCase() === normalizedFamily.toLowerCase());
+      const manifestFont = familyFonts.find(item =>
+        item.weight === normalizedWeight && (item.style || 'normal') === normalizedStyle
+      ) || familyFonts.find(item => item.style === normalizedStyle)
+        || (normalizedStyle === 'normal' ? familyFonts.find(item => item.style === undefined) : undefined);
       const result = await fetchFontBuffer(normalizedFamily, normalizedWeight, fontStyle, fontUrl || manifestFont?.url, {
         instanceVariableFonts: true,
       });

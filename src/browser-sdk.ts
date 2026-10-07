@@ -4,6 +4,8 @@ import { RenderEngine } from './render/render-engine';
 import { BulkRenderer } from './render/bulk-renderer';
 
 import { FontLoader } from './fonts/font-loader';
+import { collectTemplateFonts } from './fonts/template-fonts';
+import { cleanFontFamily } from './fonts/font-loader';
 import { 
   BrowserSDKOptions, 
   RenderOptions, 
@@ -16,66 +18,36 @@ import {
 } from './types';
 
 async function scanAndLoadTemplateFonts(template: DocumentTemplate, fontLoader: FontLoader, backendManifest: any[] = []): Promise<void> {
-  const fontsToLoad = new Map<string, { family: string; weight: number; url?: string }>();
+  await fontLoader.loadFonts(collectTemplateFonts(template, Array.isArray(backendManifest) ? backendManifest : []));
+  if (!fontLoader.hasGenericFallbacks()) return;
 
-  // Add backend manifest first to preserve custom URLs
-  if (Array.isArray(backendManifest)) {
-    for (const item of backendManifest) {
-      if (item && item.family) {
-        const cleanFamily = item.family.split(',')[0].trim().replace(/['"]/g, '');
-        const weight = parseInt(String(item.weight)) || 400;
-        const key = `${cleanFamily.toLowerCase()}::${weight}`;
-        fontsToLoad.set(key, { family: cleanFamily, weight, url: item.url });
-      }
-    }
-  }
-
-  function addFont(family: string | undefined, weight: string | number | undefined) {
-    if (!family) return;
-    const cleanFamily = family.split(',')[0].trim().replace(/['"]/g, '');
-    let w = 400;
-    const wStr = String(weight).toLowerCase();
-    if (wStr === 'bold') w = 700;
-    else if (wStr === 'normal') w = 400;
-    else {
-      w = parseInt(wStr) || 400;
-    }
-    
-    const key = `${cleanFamily.toLowerCase()}::${w}`;
-    if (!fontsToLoad.has(key)) {
-      fontsToLoad.set(key, { family: cleanFamily, weight: w });
-    }
-  }
-
-  function processLayers(layers: Layer[]) {
-    for (const layer of layers) {
-      if (layer.visible === false) continue;
-      if (layer.type === 'text' || layer.type === 'textsvg') {
-        addFont(layer.fontFamily, layer.fontWeight);
-      }
-      if (layer.type === 'table-svg' && layer.tableData?.cells) {
-        for (const row of layer.tableData.cells) {
-          for (const cell of row) {
-            if (cell) addFont(cell.fontFamily, cell.fontWeight);
-          }
-        }
-      }
-      if (layer.type === 'chart-svg' && layer.chartData) {
-        addFont(layer.chartData.fontFamily, 'normal');
-      }
-      if ('layers' in layer && Array.isArray((layer as any).layers)) {
-        processLayers((layer as any).layers);
-      }
-    }
-  }
-
-  processLayers(template.frontLayers || []);
-  processLayers(template.backLayers || []);
-
-  const manifest = Array.from(fontsToLoad.values());
-  await fontLoader.loadFonts(manifest);
+  // An unknown family with no usable web/default font needs an explicit CSS
+  // generic in the existing layer stack. Clone changed layers so the cached API
+  // template remains intact for a later render that can retry the font source.
+  const familyWithGeneric = (value: string | undefined): string | undefined =>
+    value && fontLoader.usesGenericFallback(cleanFontFamily(value)) && !/\b(sans-serif|serif|monospace)\b/i.test(value)
+      ? `${value}, sans-serif` : value;
+  const patchLayers = (layers: Layer[]): Layer[] => layers.map(layer => {
+    const fontFamily = familyWithGeneric(layer.fontFamily);
+    const children = (layer as Layer & { layers?: Layer[] }).layers;
+    const tableData = layer.tableData?.cells ? {
+      ...layer.tableData,
+      cells: layer.tableData.cells.map(row => row.map(cell => cell && {
+        ...cell, fontFamily: familyWithGeneric(cell.fontFamily) || cell.fontFamily,
+      })),
+    } : layer.tableData;
+    const chartData = layer.chartData?.fontFamily ? {
+      ...layer.chartData, fontFamily: familyWithGeneric(layer.chartData.fontFamily),
+    } : layer.chartData;
+    return { ...layer, fontFamily, tableData, chartData,
+      ...(Array.isArray(children) ? { layers: patchLayers(children) } : {}),
+    };
+  });
+  template.frontLayers = patchLayers(template.frontLayers || []);
+  template.backLayers = patchLayers(template.backLayers || []);
 }
 
+/** @deprecated Use HundredPrints for new integrations. */
 export class BrowserSDK {
   private apiClient: ApiClient;
   private templateCache: TemplateCache;
