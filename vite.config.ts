@@ -33,7 +33,7 @@ export default defineConfig({
 
   plugins: [
     dts({
-      rollupTypes: true,
+      bundleTypes: true,
 
       include: ['src'],
 
@@ -43,6 +43,7 @@ export default defineConfig({
         '**/*.spec.ts',
         '**/*.spec.tsx',
         '**/__tests__/**',
+        '**/type-tests.ts',
       ],
     }),
   ],
