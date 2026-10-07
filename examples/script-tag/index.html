@@ -233,7 +233,7 @@
     
     // configure your own templateId from 100PrintsWithMe dashboard
     const templateId =
-      "39308b5d-d6cd-4d9d-9eb0-84e56b32482e";
+      "template_1a2b3c4d5e6f7g8h9i0j"; // Replace with your actual template ID
     
     // Update the data object below to match your template's fields
     const data = {
@@ -280,7 +280,7 @@
     } else {
 
       const prints = new HundredPrints({
-        publishableKey: "pk_live_J0z-iDYEfqs0HQIdkgNyAP6rhwkbrPGL"
+        publishableKey: "your_publishable_key_here" // Replace with your actual publishable key
       });
 
       prints.renderTo(preview, {
@@ -290,7 +290,7 @@
         output: {
           format: "png",
           side: "front",
-          quality: "high"
+          quality: "high" 
         }
       })
       .then(async (result) => {
