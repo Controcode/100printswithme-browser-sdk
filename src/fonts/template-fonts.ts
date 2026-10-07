@@ -25,7 +25,7 @@ function manifestSource(manifest: BackendFontManifestItem[], family: string, wei
   if (sameStyle?.url) return sameStyle.url;
   const legacy = candidates.find(item => normalizeFontWeight(item.weight) === weight && item.style === undefined && style === 'normal');
   if (legacy?.url) return legacy.url;
-  return style === 'normal' ? candidates.find(item => item.style === undefined)?.url : undefined;
+  return candidates.find(item => item.url)?.url;
 }
 
 export function collectTemplateFonts(template: DocumentTemplate, backendManifest: BackendFontManifestItem[] = []): FontManifestItem[] {

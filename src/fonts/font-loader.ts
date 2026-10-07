@@ -70,6 +70,8 @@ export function fontDescriptor(item: Pick<FontManifestItem, 'family' | 'weight' 
   return `${item.style || 'normal'} ${item.weight} ${size}px "${escaped}"`;
 }
 
+type FontLoadOutcome = 'loaded' | 'default' | 'generic';
+
 function loadError(item: FontManifestItem, cause: unknown): HundredPrintsError {
   const source = item.url?.startsWith('data:') ? 'inline font data' : item.url || 'Google Fonts';
   return new HundredPrintsError('FONT_LOAD_FAILED', `Failed to load font "${cleanFontFamily(item.family)}".`, {
@@ -85,24 +87,16 @@ function loadError(item: FontManifestItem, cause: unknown): HundredPrintsError {
 
 export class FontLoader {
   private loadedFonts = new Set<string>();
-  private loadingFonts = new Map<string, Promise<void>>();
+  private loadingFonts = new Map<string, Promise<FontLoadOutcome>>();
   private registeredFaces = new Map<string, Promise<FontFace>>();
-  private genericFallbacks = new Set<string>();
 
-  async loadFonts(manifest: FontManifestItem[]): Promise<void> {
-    this.genericFallbacks.clear();
-    await Promise.all(manifest.map(item => this.loadFont(item)));
+  async loadFonts(manifest: FontManifestItem[]): Promise<Set<string>> {
+    const outcomes = await Promise.all(manifest.map(item => this.loadFont(item)));
+    return new Set(manifest.flatMap((item, index) => outcomes[index] === 'generic'
+      ? [cleanFontFamily(item.family).toLowerCase()] : []));
   }
 
-  hasGenericFallbacks(): boolean {
-    return this.genericFallbacks.size > 0;
-  }
-
-  usesGenericFallback(family: string): boolean {
-    return this.genericFallbacks.has(cleanFontFamily(family).toLowerCase());
-  }
-
-  private loadFont(item: FontManifestItem): Promise<void> {
+  private loadFont(item: FontManifestItem): Promise<FontLoadOutcome> {
     const normalized: FontManifestItem = {
       ...item,
       family: cleanFontFamily(item.family),
@@ -110,28 +104,31 @@ export class FontLoader {
       style: item.style === 'italic' ? 'italic' : 'normal',
     };
     const key = `${normalized.family.toLowerCase()}|${normalized.weight}|${normalized.style}|${normalized.url || 'resolved'}`;
-    if (this.loadedFonts.has(key)) return Promise.resolve();
+    if (this.loadedFonts.has(key)) return Promise.resolve('loaded');
     const pending = this.loadingFonts.get(key);
     if (pending) return pending;
 
     const loading = this.performLoad(normalized)
-      .then(cacheable => { if (cacheable) this.loadedFonts.add(key); })
+      .then(outcome => {
+        if (outcome === 'loaded') this.loadedFonts.add(key);
+        return outcome;
+      })
       .catch(error => { throw error instanceof HundredPrintsError ? error : loadError(normalized, error); })
       .finally(() => { this.loadingFonts.delete(key); });
     this.loadingFonts.set(key, loading);
     return loading;
   }
 
-  private async performLoad(item: FontManifestItem): Promise<boolean> {
+  private async performLoad(item: FontManifestItem): Promise<FontLoadOutcome> {
     const family = cleanFontFamily(item.family);
     // Explicit template/upload sources retain their existing fail-on-error policy.
     if (item.url) {
       const face = await this.registerSource(family, item.url, String(item.weight), item.style || 'normal');
       await this.verify(item, face);
-      return true;
+      return 'loaded';
     }
 
-    if (SYSTEM_FONTS.has(family.toLowerCase())) return true;
+    if (SYSTEM_FONTS.has(family.toLowerCase())) return 'loaded';
 
     const platform = resolvePlatformFont(family, item.weight, item.style || 'normal');
     if (platform) {
@@ -142,27 +139,25 @@ export class FontLoader {
         if (!platform.exact) {
           console.warn(`[100Prints] "${family}" ${item.weight} ${item.style} is unavailable. Using "${platform.family}" ${platformWeightDescriptor(platform.variant)} ${platform.variant.style}.`);
         }
-        return true;
+        return 'loaded';
       } catch (error) {
         console.warn(`[100Prints] Could not load platform font "${family}" from ${platform.url}.`, error);
-        await this.loadDefaultOrGeneric(item);
-        return false;
+        return this.loadDefaultOrGeneric(item);
       }
     }
 
     try {
       await this.loadFromGoogleFonts(item);
       await this.verify(item);
-      return true;
+      return 'loaded';
     } catch (error) {
       document.getElementById(this.googleLinkId(item))?.remove();
       console.warn(`[100Prints] Could not load "${family}" from Google Fonts.`, error);
-      await this.loadDefaultOrGeneric(item);
-      return false;
+      return this.loadDefaultOrGeneric(item);
     }
   }
 
-  private async loadDefaultOrGeneric(item: FontManifestItem): Promise<void> {
+  private async loadDefaultOrGeneric(item: FontManifestItem): Promise<FontLoadOutcome> {
     const fallback = resolvePlatformFont(PLATFORM_DEFAULT_FONT, item.weight, item.style || 'normal');
     if (fallback) {
       try {
@@ -172,12 +167,12 @@ export class FontLoader {
           platformWeightDescriptor(fallback.variant), fallback.variant.style);
         await this.verify(item, face);
         console.warn(`[100Prints] Using fallback "${PLATFORM_DEFAULT_FONT}" for "${item.family}".`);
-        return;
+        return 'default';
       } catch (error) {
         console.warn(`[100Prints] Could not load default font "${PLATFORM_DEFAULT_FONT}". Using browser sans-serif.`, error);
       }
     }
-    this.genericFallbacks.add(cleanFontFamily(item.family).toLowerCase());
+    return 'generic';
   }
 
   private registerSource(family: string, url: string, weight: string, style: FontStyle): Promise<FontFace> {
@@ -275,6 +270,5 @@ export class FontLoader {
     this.loadedFonts.clear();
     this.loadingFonts.clear();
     this.registeredFaces.clear();
-    this.genericFallbacks.clear();
   }
 }

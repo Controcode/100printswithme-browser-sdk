@@ -659,7 +659,7 @@ class FontManager {
       const manifestFont = familyFonts.find(item =>
         item.weight === normalizedWeight && (item.style || 'normal') === normalizedStyle
       ) || familyFonts.find(item => item.style === normalizedStyle)
-        || (normalizedStyle === 'normal' ? familyFonts.find(item => item.style === undefined) : undefined);
+        || familyFonts.find(item => item.url);
       const result = await fetchFontBuffer(normalizedFamily, normalizedWeight, fontStyle, fontUrl || manifestFont?.url, {
         instanceVariableFonts: true,
       });

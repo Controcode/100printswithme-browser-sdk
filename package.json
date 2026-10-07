@@ -1,10 +1,13 @@
 {
   "name": "@100printswithme/browser-sdk",
   "version": "2.0.0",
-  "description": "Official Browser SDK for 100PrintsWithMe",
+  "description": "Render 100PrintsWithMe templates as PNG, JPEG, PDF, or vector PDF in the browser.",
   "type": "module",
-  "main": "./dist/100prints-sdk.umd.js",
+  "main": "./dist/100prints-sdk.es.js",
   "module": "./dist/100prints-sdk.es.js",
+  "browser": "./dist/100prints-sdk.es.js",
+  "unpkg": "./dist/100prints-sdk.umd.js",
+  "jsdelivr": "./dist/100prints-sdk.umd.js",
   "types": "./dist/100prints-sdk.d.ts",
   "files": [
     "dist",
@@ -15,7 +18,7 @@
     ".": {
       "types": "./dist/100prints-sdk.d.ts",
       "import": "./dist/100prints-sdk.es.js",
-      "require": "./dist/100prints-sdk.umd.js"
+      "default": "./dist/100prints-sdk.es.js"
     }
   },
   "scripts": {
@@ -46,6 +49,19 @@
     "vitest": "^3.2.4"
   },
   "license": "MIT",
+  "keywords": [
+    "100printswithme",
+    "browser-sdk",
+    "template-rendering",
+    "pdf",
+    "png",
+    "jpeg",
+    "canvas",
+    "typescript"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "homepage": "https://github.com/Controcode/100printswithme-browser-sdk",
   "repository": {
     "type": "git",

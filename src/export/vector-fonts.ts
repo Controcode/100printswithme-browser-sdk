@@ -1,5 +1,5 @@
 import { getUsWeightClass, instanceFontAtWeight } from './font-instancer';
-import { resolvePlatformFont } from '../fonts/platform-fonts';
+import { PLATFORM_DEFAULT_FONT, resolvePlatformFont } from '../fonts/platform-fonts';
 
 export interface VectorFontManifestItem {
   family: string;
@@ -33,6 +33,9 @@ async function resolveWebFontUrl(family: string, weight: string | number, style:
       }
     })();
     webFontUrls.set(key, request);
+    void request.then(url => {
+      if (!url && webFontUrls.get(key) === request) webFontUrls.delete(key);
+    });
   }
   return request;
 }
@@ -47,16 +50,34 @@ export async function fetchFontBuffer(
   const numericWeight = Number(weight) || (String(weight).toLowerCase() === 'bold' ? 700 : 400);
   const platform = fontUrl ? null : resolvePlatformFont(family.split(',')[0].trim().replace(/^['"]|['"]$/g, ''),
     numericWeight, style === 'italic' ? 'italic' : 'normal');
-  const sourceUrl = fontUrl || platform?.url || await resolveWebFontUrl(family, weight, style);
-  if (!sourceUrl) return null;
-  let buffer = cache.get(sourceUrl);
-  if (!buffer) {
-    const response = await fetch(sourceUrl, { mode: 'cors' });
-    if (!response.ok) return null;
-    buffer = await response.arrayBuffer();
-    // PDFKit's fontkit accepts WOFF2 directly. Keep its table structure intact.
-    cache.set(sourceUrl, buffer);
+  let sourceUrl = fontUrl || platform?.url || await resolveWebFontUrl(family, weight, style);
+  const loadSource = async (url: string): Promise<ArrayBuffer | null> => {
+    const cached = cache.get(url);
+    if (cached) return cached;
+    try {
+      const response = await fetch(url, { mode: 'cors' });
+      if (!response.ok) return null;
+      const buffer = await response.arrayBuffer();
+      // PDFKit's fontkit accepts WOFF2 directly. Keep its table structure intact.
+      cache.set(url, buffer);
+      return buffer;
+    } catch {
+      return null;
+    }
+  };
+  let buffer = sourceUrl ? await loadSource(sourceUrl) : null;
+  if (!buffer && !fontUrl) {
+    const fallback = resolvePlatformFont(PLATFORM_DEFAULT_FONT, numericWeight,
+      style === 'italic' ? 'italic' : 'normal');
+    if (fallback && fallback.url !== sourceUrl) {
+      buffer = await loadSource(fallback.url);
+      if (buffer) {
+        console.warn(`[100Prints] Could not embed "${family}". Using fallback "${PLATFORM_DEFAULT_FONT}" in vector PDF.`);
+        sourceUrl = fallback.url;
+      }
+    }
   }
+  if (!buffer || !sourceUrl) return null;
   const embedKey = `${sourceUrl}::${numericWeight}::${options?.instanceVariableFonts ? 'pin' : 'raw'}`;
   let preparedEntry = preparedCache.get(embedKey);
   if (!preparedEntry) {

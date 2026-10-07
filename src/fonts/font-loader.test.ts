@@ -103,6 +103,50 @@ it('loads Bebas Neue 700 from the platform asset without touching Google Fonts',
   } finally { warn.mockRestore(); }
 });
 
+it('registers a variable face once for simultaneous weights', async () => {
+  const faces = stubBrowserFonts();
+  let fetches = 0;
+  vi.stubGlobal('fetch', async () => {
+    fetches++;
+    await new Promise(resolve => setTimeout(resolve, 10));
+    return new Response(new Uint8Array([0, 1, 0, 0]));
+  });
+  await new FontLoader().loadFonts([
+    { family: 'Inter', weight: 400, style: 'normal' },
+    { family: 'Inter', weight: 700, style: 'normal' },
+  ]);
+  expect(fetches).toBe(1);
+  expect(faces).toHaveLength(1);
+  expect(faces[0].descriptors.weight).toBe('100 900');
+});
+
+it('keeps an explicit uploaded source ahead of the platform registry', async () => {
+  const faces = stubBrowserFonts();
+  const urls: string[] = [];
+  vi.stubGlobal('fetch', async (url: string) => {
+    urls.push(url);
+    return new Response(new Uint8Array([0, 1, 0, 0]));
+  });
+  await new FontLoader().loadFonts([{ family: 'Inter', weight: 700, style: 'italic',
+    url: 'https://uploads.test/my-font.ttf' }]);
+  expect(urls).toEqual(['https://uploads.test/my-font.ttf']);
+  expect(faces[0].descriptors).toEqual({ weight: '700', style: 'italic' });
+});
+
+it('uses a successful Google face for an unknown family', async () => {
+  const faces = stubBrowserFonts();
+  const links: string[] = [];
+  (document.head as any).appendChild = (link: any) => {
+    links.push(link.href);
+    faces.push({ family: 'Other Family', status: 'loaded' });
+    queueMicrotask(() => link.onload?.());
+  };
+  const loader = new FontLoader();
+  const genericFallbacks = await loader.loadFonts([{ family: 'Other Family', weight: 700, style: 'italic' }]);
+  expect(links).toEqual(['https://fonts.googleapis.com/css2?family=Other+Family:ital,wght@1,700&display=block']);
+  expect(genericFallbacks.size).toBe(0);
+});
+
 it('tries Google only for unknown fonts, then uses Inter when Google fails', async () => {
   const faces = stubBrowserFonts();
   const urls: string[] = [];
@@ -113,11 +157,11 @@ it('tries Google only for unknown fonts, then uses Inter when Google fails', asy
   const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
   try {
     const loader = new FontLoader();
-    await loader.loadFonts([{ family: 'Completely Unknown Family', weight: 700, style: 'italic' }]);
+    const genericFallbacks = await loader.loadFonts([{ family: 'Completely Unknown Family', weight: 700, style: 'italic' }]);
     expect(urls).toEqual(['https://www.100printswith.me/fonts/Inter-Italic.ttf']);
     expect(faces[0].family).toBe('Completely Unknown Family');
     expect(faces[0].descriptors).toEqual({ weight: '100 900', style: 'italic' });
-    expect(loader.usesGenericFallback('Completely Unknown Family')).toBe(false);
+    expect(genericFallbacks.size).toBe(0);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('Using fallback "Inter"'));
   } finally { warn.mockRestore(); }
 });
@@ -130,9 +174,8 @@ it('uses browser sans-serif if the platform default also fails, and retries late
   try {
     const loader = new FontLoader();
     const request = { family: 'Bebas Neue', weight: 700, style: 'normal' as const };
-    await loader.loadFonts([request]);
-    expect(loader.usesGenericFallback('Bebas Neue')).toBe(true);
-    await loader.loadFonts([request]);
+    expect(await loader.loadFonts([request])).toEqual(new Set(['bebas neue']));
+    expect(await loader.loadFonts([request])).toEqual(new Set(['bebas neue']));
     expect(requests).toBe(4); // Bebas and Inter on both attempts.
   } finally { warn.mockRestore(); }
 });

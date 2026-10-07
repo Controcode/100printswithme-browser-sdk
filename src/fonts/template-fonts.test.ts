@@ -30,4 +30,13 @@ describe('collectTemplateFonts', () => {
         { family: 'Inter', weight: 700, style: 'normal', url: undefined },
       ]);
   });
+
+  it('keeps an explicit manifest source for a requested italic face', () => {
+    const template = { frontLayers: [{ id: 'custom', type: 'text', fontFamily: 'Uploaded Face',
+      fontWeight: 700, fontStyle: 'italic', content: 'Custom' }], backLayers: [] } as any;
+    expect(collectTemplateFonts(template, [{ family: 'Uploaded Face', weight: 400,
+      url: 'https://cdn.test/uploaded.ttf' }])[0]).toMatchObject({
+      family: 'Uploaded Face', weight: 700, style: 'italic', url: 'https://cdn.test/uploaded.ttf',
+    });
+  });
 });

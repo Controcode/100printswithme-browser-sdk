@@ -21,9 +21,18 @@ describe('platform font registry', () => {
   });
 
   it('selects exact and same-family variants without inventing files', () => {
-    expect(resolvePlatformFont('Inter', 700, 'italic')).toMatchObject({
-      url: 'https://www.100printswith.me/fonts/Inter-Italic.ttf', exact: true,
-    });
+    for (const [family, stem] of [
+      ['Inter', 'Inter'], ['Montserrat', 'Montserrat'],
+      ['Merriweather', 'Merriweather'], ['JetBrains Mono', 'JetBrainsMono'],
+    ]) {
+      expect(resolvePlatformFont(family, 400, 'normal')).toMatchObject({
+        url: `https://www.100printswith.me/fonts/${stem}.ttf`, exact: true,
+      });
+      expect(resolvePlatformFont(family, 700, 'italic')).toMatchObject({
+        url: `https://www.100printswith.me/fonts/${stem}-Italic.ttf`,
+        exact: family !== 'Merriweather',
+      });
+    }
     expect(resolvePlatformFont('Bebas Neue', 700, 'normal')).toMatchObject({
       url: 'https://www.100printswith.me/fonts/BebasNeue.ttf', exact: false,
       variant: { weight: 400, style: 'normal' },
@@ -31,9 +40,16 @@ describe('platform font registry', () => {
     expect(resolvePlatformFont('Bebas Neue', 400, 'italic')).toMatchObject({
       variant: { weight: 400, style: 'normal' }, exact: false,
     });
-    expect(resolvePlatformFont('Playfair Display', 700, 'italic')).toMatchObject({
-      url: 'https://www.100printswith.me/fonts/PlayfairDisplay-BoldItalic.ttf', exact: true,
-    });
+    for (const [weight, style, file] of [
+      [400, 'normal', 'PlayfairDisplay.ttf'],
+      [700, 'normal', 'PlayfairDisplay-Bold.ttf'],
+      [400, 'italic', 'PlayfairDisplay-Italic.ttf'],
+      [700, 'italic', 'PlayfairDisplay-BoldItalic.ttf'],
+    ] as const) {
+      expect(resolvePlatformFont('Playfair Display', weight, style)).toMatchObject({
+        url: `https://www.100printswith.me/fonts/${file}`, exact: true,
+      });
+    }
     expect(resolvePlatformFont('Playfair Display', 600, 'normal')).toMatchObject({
       variant: { weight: 700, style: 'normal' }, exact: false,
     });

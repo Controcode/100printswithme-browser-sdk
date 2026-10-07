@@ -18,14 +18,15 @@ import {
 } from './types';
 
 async function scanAndLoadTemplateFonts(template: DocumentTemplate, fontLoader: FontLoader, backendManifest: any[] = []): Promise<void> {
-  await fontLoader.loadFonts(collectTemplateFonts(template, Array.isArray(backendManifest) ? backendManifest : []));
-  if (!fontLoader.hasGenericFallbacks()) return;
+  const genericFallbacks = await fontLoader.loadFonts(collectTemplateFonts(template,
+    Array.isArray(backendManifest) ? backendManifest : []));
+  if (!genericFallbacks.size) return;
 
   // An unknown family with no usable web/default font needs an explicit CSS
   // generic in the existing layer stack. Clone changed layers so the cached API
   // template remains intact for a later render that can retry the font source.
   const familyWithGeneric = (value: string | undefined): string | undefined =>
-    value && fontLoader.usesGenericFallback(cleanFontFamily(value)) && !/\b(sans-serif|serif|monospace)\b/i.test(value)
+    value && genericFallbacks.has(cleanFontFamily(value).toLowerCase()) && !/\b(sans-serif|serif|monospace)\b/i.test(value)
       ? `${value}, sans-serif` : value;
   const patchLayers = (layers: Layer[]): Layer[] => layers.map(layer => {
     const fontFamily = familyWithGeneric(layer.fontFamily);
