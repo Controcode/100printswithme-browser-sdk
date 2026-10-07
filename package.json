@@ -3,17 +3,22 @@
   "version": "2.0.1",
   "description": "Render 100PrintsWithMe templates as PNG, JPEG, PDF, or vector PDF in the browser.",
   "type": "module",
+
   "main": "./dist/100prints-sdk.es.js",
   "module": "./dist/100prints-sdk.es.js",
   "browser": "./dist/100prints-sdk.es.js",
+
   "unpkg": "./dist/100prints-sdk.umd.js",
   "jsdelivr": "./dist/100prints-sdk.umd.js",
+
   "types": "./dist/index.d.ts",
+
   "files": [
     "dist",
     "README.md",
     "LICENSE"
   ],
+
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -21,6 +26,7 @@
       "default": "./dist/100prints-sdk.es.js"
     }
   },
+
   "scripts": {
     "dev": "vite",
     "build": "vite build && node scripts/postbuild.js",
@@ -30,14 +36,12 @@
     "watch": "vite build --watch",
     "prepublishOnly": "npm run build"
   },
-  "dependencies": {
-    "pdfkit": "^0.19.1",
-    "svg-to-pdfkit": "^0.1.8"
-  },
+
   "devDependencies": {
     "@types/jsbarcode": "^3.11.4",
     "@types/pdfkit": "^0.17.6",
     "@types/qrcode": "^1.5.6",
+
     "brotli-dec-wasm": "^2.3.2",
     "canvg": "^4.0.3",
     "idb-keyval": "^6.2.5",
@@ -45,14 +49,19 @@
     "jspdf": "^4.0.0",
     "jszip": "^3.10.1",
     "konva": "^9.3.22",
+    "pdfkit": "^0.19.1",
     "playwright-core": "^1.55.0",
     "qrcode": "^1.5.4",
+    "svg-to-pdfkit": "^0.1.8",
+
     "typescript": "^5.8.2",
     "vite": "^6.2.0",
     "vite-plugin-dts": "^5.1.2",
     "vitest": "^5.0.3"
   },
+
   "license": "MIT",
+
   "keywords": [
     "100printswithme",
     "browser-sdk",
@@ -60,17 +69,22 @@
     "pdf",
     "png",
     "jpeg",
+    "vector-pdf",
     "canvas",
     "typescript"
   ],
+
   "publishConfig": {
     "access": "public"
   },
+
   "homepage": "https://github.com/Controcode/100printswithme-browser-sdk",
+
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Controcode/100printswithme-browser-sdk.git"
   },
+
   "bugs": {
     "url": "https://github.com/Controcode/100printswithme-browser-sdk/issues"
   }
