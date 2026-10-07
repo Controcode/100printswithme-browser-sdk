@@ -1,24 +1,19 @@
 {
   "name": "@100printswithme/browser-sdk",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Render 100PrintsWithMe templates as PNG, JPEG, PDF, or vector PDF in the browser.",
   "type": "module",
-
   "main": "./dist/100prints-sdk.es.js",
   "module": "./dist/100prints-sdk.es.js",
   "browser": "./dist/100prints-sdk.es.js",
-
   "unpkg": "./dist/100prints-sdk.umd.js",
   "jsdelivr": "./dist/100prints-sdk.umd.js",
-
   "types": "./dist/index.d.ts",
-
   "files": [
     "dist",
     "README.md",
     "LICENSE"
   ],
-
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -26,7 +21,6 @@
       "default": "./dist/100prints-sdk.es.js"
     }
   },
-
   "scripts": {
     "dev": "vite",
     "build": "vite build && node scripts/postbuild.js",
@@ -36,12 +30,10 @@
     "watch": "vite build --watch",
     "prepublishOnly": "npm run build"
   },
-
   "dependencies": {
     "pdfkit": "^0.19.1",
     "svg-to-pdfkit": "^0.1.8"
   },
-
   "devDependencies": {
     "@types/jsbarcode": "^3.11.4",
     "@types/pdfkit": "^0.17.6",
@@ -60,9 +52,7 @@
     "vite-plugin-dts": "^5.1.2",
     "vitest": "^5.0.3"
   },
-
   "license": "MIT",
-
   "keywords": [
     "100printswithme",
     "browser-sdk",
@@ -73,18 +63,14 @@
     "canvas",
     "typescript"
   ],
-
   "publishConfig": {
     "access": "public"
   },
-
   "homepage": "https://github.com/Controcode/100printswithme-browser-sdk",
-
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Controcode/100printswithme-browser-sdk.git"
   },
-
   "bugs": {
     "url": "https://github.com/Controcode/100printswithme-browser-sdk/issues"
   }
