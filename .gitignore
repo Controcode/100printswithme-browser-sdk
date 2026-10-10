@@ -6,7 +6,7 @@ web_modules/
 # Build outputs
 # If you prefer to track built files in git, uncomment the line below:
 # !dist/
-dist/
+
 
 # Log files
 logs
